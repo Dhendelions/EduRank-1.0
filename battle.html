@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranked Battle - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .battle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--surface-glass);
+        padding: 15px 5%;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    :root.dark .battle-header,
+    body.dark .battle-header {
+        background: var(--surface);
+    }
+    .vs-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .player-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface-2);
+        padding: 8px 15px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+    }
+    :root.dark .player-card,
+    body.dark .player-card { background: var(--surface-2); }
+    .player-card img {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+    .vs-text {
+        font-weight: 800;
+        color: #ef4444;
+        font-style: italic;
+        font-size: 1.2rem;
+    }
+    .timer {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .question-section {
+        padding: 40px 5%;
+        max-width: 800px;
+        margin: auto;
+    }
+    .question-card {
+        background: var(--surface-glass);
+        padding: 30px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 30px;
+    }
+    :root.dark .question-card,
+    body.dark .question-card {
+        background: var(--surface);
+    }
+    .question-number {
+        color: var(--primary);
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .question-text {
+        font-size: 1.2rem;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .option-label {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.2s ease;
+        font-weight: 500;
+    }
+    .option-label:hover {
+        border-color: var(--primary);
+        background: var(--primary-soft);
+    }
+    :root.dark .option-label:hover,
+    body.dark .option-label:hover {
+        background: var(--border);
+    }
+    .option-label input {
+        margin-right: 15px;
+        transform: scale(1.2);
+    }
+    .submit-btn {
+        width: 100%;
+        margin-top: 20px;
+        font-size: 1.1rem;
+    }
+    
+    
+    .correct-answer {
+        border-color: var(--success) !important;
+        background: #dcfce7 !important;
+        color: #166534;
+    }
+    :root.dark .correct-answer { background: rgba(22, 101, 52, 0.3) !important; color: #4ade80; }
+    
+    .wrong-answer {
+        border-color: #ef4444 !important;
+        background: #fee2e2 !important;
+        color: #991b1b;
+    }
+    :root.dark .wrong-answer { background: rgba(153, 27, 27, 0.3) !important; color: #f87171; }
+    
+    .feedback-msg {
+        text-align: center;
+        font-weight: 600;
+        margin-top: 15px;
+        font-size: 1.1rem;
+        display: none;
+    }
+    .battle-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--primary);
+    }
+    .battle-status.error {
+        background: rgba(239, 68, 68, 0.14);
+        color: #ef4444;
+    }
+    .battle-status.success {
+        background: rgba(16, 185, 129, 0.14);
+        color: var(--success);
+    }
+    .battle-progress {
+        width: 100%;
+        height: 8px;
+        background: rgba(148, 163, 184, 0.2);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 14px;
+    }
+    .battle-progress > span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, var(--primary), var(--success));
+        transition: width 0.25s ease;
+    }
+    
+    @media(max-width: 768px) {
+        .vs-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .battle-header {
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+        }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="battle-header">
+    <a href="#" onclick="confirmExit()" style="color: var(--text-light); text-decoration: none; font-size: 1.5rem;">
+        <i class="fa-solid fa-xmark"></i>
+    </a>
+    
+    <div class="vs-container">
+        <div class="player-card">
+            <img src="https://i.pravatar.cc/100?img=12" id="myAvatar" alt="You">
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600;" id="myName">You</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Score: <span id="myScore">0</span></div>
+            </div>
+        </div>
+        <div class="vs-text">VS</div>
+        <div class="player-card">
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600;" id="oppName">Opponent</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Score: <span id="oppScore">0</span></div>
+            </div>
+            <img src="https://i.pravatar.cc/100?img=5" id="oppImg" alt="Opponent">
+        </div>
+    </div>
+
+    <div class="timer">
+        <i class="fa-regular fa-clock"></i>
+        <span id="countdown">05:00</span>
+    </div>
+  </div>
+
+  <main class="question-section">
+    <div class="question-card">
+        <div class="question-number">
+            <span id="qNumText">Soal 1 / 5</span>
+        </div>
+        <div id="battleStatus" class="battle-status">Menyambungkan ke server...</div>
+        <div class="question-text" id="qText">
+            Loading...
+        </div>
+        <form id="battleForm">
+            <div class="options" id="optionsContainer">
+                
+            </div>
+            <div id="feedbackMsg" class="feedback-msg"></div>
+            <button type="button" class="primary-btn submit-btn" id="actionBtn" onclick="handleAction()">Jawab</button>
+        </form>
+        <div class="battle-progress" aria-hidden="true"><span id="battleProgressBar"></span></div>
+    </div>
+  </main>
+
+  <script src="api-config.js"></script>
+  <script src="interaksi.js"></script>
+  <script src="questions.js"></script>
+  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+  <script>
+    const gameMode = localStorage.getItem("gameMode") || "ranked";
+    const gameParam = localStorage.getItem("gameParam") || "campuran";
+    const selectedSubject = localStorage.getItem("selectedSubject") || gameParam || "campuran";
+    const roomCode = gameMode === 'friend'
+        ? (String(gameParam || '').trim() || String(localStorage.getItem('roomCode') || '').trim())
+        : '';
+    let friendRoomSettings = {};
+    try {
+        friendRoomSettings = JSON.parse(localStorage.getItem('friendRoomSettings') || '{}');
+    } catch (error) {
+        friendRoomSettings = {};
+    }
+    const token = localStorage.getItem("edurank_token");
+
+    if(!token) {
+        alert("Silakan login terlebih dahulu.");
+        window.location.href = "index.html";
+    }
+
+    const socket = io(window.EduRankConfig && typeof window.EduRankConfig.getSocketUrl === 'function' ? window.EduRankConfig.getSocketUrl() : window.location.origin, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+    });
+
+    let currentQ = 0;
+    let totalQuestions = 5;
+    let roomId = null;
+    let questionId = null;
+    let matchFinished = false;
+    let answerLocked = false;
+    let timeInSeconds = 0;
+    let timeLimitSeconds = 300;
+    let timeRemaining = timeLimitSeconds;
+    let timerInterval = null;
+
+    function setBattleStatus(message, type = 'info') {
+        const statusEl = document.getElementById('battleStatus');
+        if(!statusEl) return;
+        statusEl.className = `battle-status ${type}`.trim();
+        statusEl.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-triangle-exclamation' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i> ${message}`;
+    }
+
+    function updateProgressBar() {
+        const bar = document.getElementById('battleProgressBar');
+        if(!bar) return;
+        const progress = totalQuestions > 0 ? Math.min(100, ((currentQ + 1) / totalQuestions) * 100) : 0;
+        bar.style.width = `${progress}%`;
+    }
+
+    function resetQuestionUi() {
+        const btn = document.getElementById('actionBtn');
+        if(btn) {
+            btn.innerText = 'Jawab';
+            btn.disabled = false;
+            btn.classList.remove('secondary-btn');
+            btn.classList.add('primary-btn');
+        }
+        const optsContainer = document.getElementById('optionsContainer');
+        if(optsContainer) optsContainer.innerHTML = '';
+    }
+
+    function persistBattleSummary(data) {
+        const scoreCount = Number.isFinite(data.score) ? Math.max(0, Math.floor(Number(data.score) / 10)) : 0;
+        const oppCount = Number.isFinite(data.oppScore) ? Math.max(0, Math.floor(Number(data.oppScore) / 10)) : 0;
+        const total = Number.isFinite(totalQuestions) ? totalQuestions : 5;
+        const accuracy = total > 0 ? (scoreCount / total) * 100 : 0;
+        localStorage.setItem('battleScore', scoreCount);
+        localStorage.setItem('battleScoreCount', scoreCount);
+        localStorage.setItem('battleTotal', total);
+        localStorage.setItem('battleAccuracy', accuracy);
+        localStorage.setItem('battleTime', Number.isFinite(data.timeTaken) ? data.timeTaken : timeInSeconds);
+        localStorage.setItem('battleOppScore', oppCount);
+        localStorage.setItem('battleOppScoreCount', oppCount);
+        localStorage.setItem('eloChange', Number.isFinite(data.eloChange) ? data.eloChange : 0);
+        localStorage.setItem('isWin', data.isWin);
+        localStorage.setItem('newElo', Number.isFinite(data.newElo) ? data.newElo : 0);
+    }
+
+    function startTimer() {
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if(!roomId || matchFinished) return;
+            timeRemaining = Math.max(0, timeRemaining - 1);
+            timeInSeconds = Math.max(0, timeLimitSeconds - timeRemaining);
+            renderCountdown();
+        }, 1000);
+    }
+
+    function renderCountdown() {
+        const countdownEl = document.getElementById('countdown');
+        if(!countdownEl) return;
+        const minutes = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+        const seconds = String(timeRemaining % 60).padStart(2, '0');
+        countdownEl.textContent = `${minutes}:${seconds}`;
+    }
+
+    socket.on('connect', () => {
+        const subjectToQueue = selectedSubject === 'campuran' ? 'campuran' : selectedSubject;
+        setBattleStatus('Menghubungkan ke antrean...', 'info');
+        socket.emit('joinMatchmaking', {
+            mode: gameMode,
+            subject: subjectToQueue,
+            roomCode,
+            settings: gameMode === 'friend' ? friendRoomSettings : undefined
+        });
+        document.getElementById('qText').innerText = 'Mencari lawan...';
+    });
+
+    socket.on('connect_error', () => {
+        setBattleStatus('Koneksi gagal. Silakan login ulang.', 'error');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 900);
+    });
+
+    socket.on('disconnect', () => {
+        if(!matchFinished) {
+            setBattleStatus('Koneksi terputus. Menunggu sambungan ulang...', 'error');
+        }
+    });
+
+    socket.on('reconnect', () => {
+        setBattleStatus('Koneksi pulih. Menunggu antrean...', 'success');
+    });
+
+    socket.on('kicked', (data) => {
+        alert(data.reason || 'Anda telah di-kick oleh sistem anti-cheat.');
+        window.location.href = 'index.html?view=main#ranked';
+    });
+
+    socket.on('matchError', (data) => {
+        const reason = data && data.reason ? data.reason : 'MATCH_ERROR';
+        setBattleStatus('Tidak dapat memulai match saat ini.', 'error');
+        showCustomAlert(`Match gagal: ${reason}`, 'error');
+    });
+
+    socket.on('waitingForMatch', () => {
+        setBattleStatus('Menunggu lawan...', 'info');
+        document.getElementById('qText').innerText = 'Menunggu lawan...';
+    });
+
+    socket.on('matchFound', (data) => {
+        roomId = data.roomId;
+        totalQuestions = data.questionsCount || 5;
+        currentQ = 0;
+        questionId = null;
+        answerLocked = false;
+        timeInSeconds = 0;
+        timeLimitSeconds = Number.isFinite(data.baseTime) ? Math.max(60, data.baseTime) : 300;
+        timeRemaining = timeLimitSeconds;
+        renderCountdown();
+        startTimer();
+        updateProgressBar();
+
+        let oppData = data.p2;
+        if(data.p2 && data.p2.name === localStorage.getItem('name')) {
+            oppData = data.p1;
+        }
+
+        document.getElementById('oppName').innerText = oppData && oppData.name ? oppData.name : 'Opponent';
+        document.getElementById('oppImg').src = (oppData && oppData.avatar) || 'https://i.pravatar.cc/100?img=15';
+        document.getElementById('qText').innerText = 'Lawan ditemukan! Bersiap...';
+        setBattleStatus('Lawan ditemukan! Bersiap...', 'success');
+    });
+
+    socket.on('nextQuestion', (data) => {
+        if(!data || !data.question) {
+            setBattleStatus('Soal tidak tersedia. Silakan coba lagi.', 'error');
+            return;
+        }
+
+        currentQ = Number.isFinite(data.questionIndex) ? data.questionIndex : 0;
+        totalQuestions = Number.isFinite(data.totalQuestions) ? data.totalQuestions : totalQuestions;
+        questionId = data.question && data.question.id ? data.question.id : null;
+        answerLocked = false;
+        updateProgressBar();
+
+        document.getElementById('qNumText').innerText = `Soal ${currentQ + 1} / ${totalQuestions}`;
+        document.getElementById('qText').innerText = data.question.q || 'Soal tidak tersedia';
+        
+        const optsContainer = document.getElementById('optionsContainer');
+        if(optsContainer) {
+            optsContainer.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            const options = Array.isArray(data.question.options) ? data.question.options : [];
+            options.forEach((opt, idx) => {
+                optsContainer.innerHTML += `
+                    <label class="option-label" id="lbl_${idx}">
+                        <input type="radio" name="answer" value="${idx}">
+                        ${labels[idx] || ''}. ${opt}
+                    </label>
+                `;
+            });
+        }
+        
+        const btn = document.getElementById('actionBtn');
+        if(btn) {
+            btn.innerText = 'Jawab';
+            btn.disabled = false;
+            btn.classList.remove('secondary-btn');
+            btn.classList.add('primary-btn');
+        }
+        setBattleStatus('Pilih jawaban Anda.', 'info');
+    });
+
+    socket.on('answerReceived', () => {
+        setBattleStatus('Jawaban terkirim. Menunggu lawan...', 'info');
+        resetQuestionUi();
+        const optsContainer = document.getElementById('optionsContainer');
+        if(optsContainer) optsContainer.innerHTML = '';
+    });
+
+    socket.on('matchFinished', (data) => {
+        matchFinished = true;
+        if(timerInterval) clearInterval(timerInterval);
+        persistBattleSummary({
+            score: data && Number.isFinite(data.score) ? data.score : 0,
+            oppScore: data && Number.isFinite(data.oppScore) ? data.oppScore : 0,
+            eloChange: data && Number.isFinite(data.eloChange) ? data.eloChange : 0,
+            newElo: data && Number.isFinite(data.newElo) ? data.newElo : 0,
+            isWin: data && data.isWin,
+            timeTaken: data && Number.isFinite(data.timeTaken) ? data.timeTaken : timeInSeconds
+        });
+        navigateWithTransition('battle-result.html');
+    });
+
+    function handleAction() {
+        if(matchFinished || !questionId || answerLocked) return;
+        
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if(!selected) {
+            showCustomAlert('Pilih jawaban terlebih dahulu!', 'error');
+            return;
+        }
+        
+        const ansIdx = parseInt(selected.value, 10);
+        if(!roomId) {
+            showCustomAlert('Room belum siap. Silakan tunggu sebentar.', 'error');
+            return;
+        }
+
+        socket.emit('submitAnswer', { roomId, questionId, answerIndex: ansIdx });
+        answerLocked = true;
+        
+        const btn = document.getElementById('actionBtn');
+        if(btn) {
+            btn.innerText = 'Terkirim...';
+            btn.disabled = true;
+        }
+        setBattleStatus('Jawaban dikirim...', 'info');
+    }
+
+    function confirmExit() {
+        showCustomConfirm('Yakin ingin keluar? Proses match akan dianggap kalah.', () => {
+            socket.disconnect();
+            navigateWithTransition('index.html?view=main#ranked');
+        });
+    }
+
+    window.addEventListener('beforeunload', () => {
+        socket.disconnect();
+    });
+
+    updateProgressBar();
+    renderCountdown();
+    setBattleStatus('Menunggu koneksi...', 'info');
+  </script>
+</body>
+</html>

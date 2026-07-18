@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="index.html?view=main#home" class="nav-logo" style="text-decoration:none;">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </a>
+      <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html?view=main#home" class="nav-link">Home</a>
+        <a href="index.html?view=main#materi" class="nav-link">Materi</a>
+        <a href="index.html?view=main#ranked" class="nav-link">Ranked</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="feedback.html" class="nav-link">Feedback</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-sun" id="darkModeIcon"></i>
+        </button>
+        <a href="profile.html" style="display:block;" class="profile-btn active-link">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="profile-dashboard-section">
+      <div class="container">
+        <div class="profile-hero">
+          <div class="profile-hero-left">
+            <div class="profile-avatar-wrap">
+              <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="profileAvatar">
+              <span class="profile-level-chip" id="profileLevelChip">Lv. 1</span>
+            </div>
+            <div>
+              <span class="profile-kicker">Competitive Learner</span>
+              <h1 id="profileName">Siswa Teladan</h1>
+              <p id="profileUsername">@siswa</p>
+              <p class="profile-bio" id="profileBio">Saya suka belajar hal baru.</p>
+              <div class="profile-meta-row">
+                <span><i class="fa-solid fa-flag"></i> <span id="profileCountry">Indonesia</span></span>
+                <span><i class="fa-solid fa-school"></i> <span id="profileSchool">SMA Nusantara</span></span>
+                <span><i class="fa-solid fa-layer-group"></i> <span id="profileClass">Kelas 11</span></span>
+              </div>
+            </div>
+          </div>
+          <button class="primary-btn" onclick="openEditProfileModal()">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+          </button>
+        </div>
+
+        <div class="profile-grid">
+          <div class="profile-card profile-level-card">
+            <div class="profile-card-head">
+              <div>
+                <span>Account Level</span>
+                <h3 id="accountLevel">Level 1</h3>
+              </div>
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="rank-info-progress">
+              <div class="rank-info-progress-fill" id="accountExpFill"></div>
+            </div>
+            <p id="accountExpText">0 / 120 EXP</p>
+          </div>
+
+          <div class="profile-card stat-card">
+            <span>Total ELO</span>
+            <strong id="profileTotalELO">0</strong>
+            <p>Akumulasi seluruh mapel</p>
+          </div>
+
+          <div class="profile-card stat-card">
+            <span>Total Match</span>
+            <strong id="profileMatches">0</strong>
+            <p>Ranked dan casual</p>
+          </div>
+
+          <div class="profile-card stat-card">
+            <span>Winrate</span>
+            <strong id="profileWinrate">0%</strong>
+            <p>Performa akun</p>
+          </div>
+        </div>
+
+        <div class="profile-content-grid">
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <h3>Rank per Mapel</h3>
+              <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="rank-subject-list" id="profileSubjectRanks"></div>
+          </div>
+
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <h3>Achievement</h3>
+              <i class="fa-solid fa-award"></i>
+            </div>
+            <div class="achievement-grid">
+              <div class="achievement-item"><i class="fa-solid fa-fire"></i><span>Fast Learner</span></div>
+              <div class="achievement-item"><i class="fa-solid fa-brain"></i><span>Math Core</span></div>
+              <div class="achievement-item"><i class="fa-solid fa-shield-halved"></i><span>Clutch Answer</span></div>
+              <div class="achievement-item locked"><i class="fa-solid fa-lock"></i><span>Profesor Path</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+      <p>© 2026 EduRank. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="editProfileOverlay">
+    <div class="game-modal edit-profile-modal">
+      <div class="modal-header">
+        <h3>Edit Profile</h3>
+        <button class="modal-close" onclick="closeEditProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form class="edit-profile-form" id="editProfileForm">
+        <div class="edit-avatar-row">
+          <img src="https://i.pravatar.cc/100?img=12" id="editAvatarPreview" alt="Avatar">
+          <label class="secondary-btn" for="editAvatarInput"><i class="fa-solid fa-camera"></i> Ganti Foto</label>
+          <input type="file" id="editAvatarInput" accept="image/*" hidden>
+        </div>
+        <div class="form-group"><label>Nama</label><input id="editName" required></div>
+        <div class="form-group"><label>Username</label><input id="editUsername" required></div>
+        <div class="form-group"><label>Email</label><input id="editEmail" type="email" required></div>
+        <div class="form-group"><label>Bio</label><textarea id="editBio" rows="3"></textarea></div>
+        <div class="form-group"><label>Kewarganegaraan</label><input id="editCountry"></div>
+        <div class="form-group"><label>Kelas</label><input id="editClass"></div>
+        <div class="form-group"><label>Sekolah</label><input id="editSchool"></div>
+        <button class="primary-btn" type="submit">Simpan Profile</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="api-config.js"></script>
+  <script src="interaksi.js"></script>
+  <script>
+    async function fetchProfileData() {
+      const token = localStorage.getItem("edurank_token");
+      if(!token) return null;
+      try {
+        const res = await fetch(getApiUrl('/api/profile'), {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if(!res.ok) throw new Error("API failed");
+        return await res.json();
+      } catch(e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    function getAccountLevel(exp) {
+      const level = Math.max(1, Math.floor(exp / 120) + 1);
+      const current = exp % 120;
+      return { level, current, next:120, percent:(current / 120) * 100 };
+    }
+
+    let currentProfileData = null;
+
+    async function renderProfile() {
+      const data = await fetchProfileData();
+      if (!data) return; // Not logged in or server error
+      currentProfileData = data;
+
+      const exp = data.exp || 0;
+      const level = getAccountLevel(exp);
+      const totalMatches = data.matches || 0;
+      const totalWins = data.wins || 0;
+      const winrate = totalMatches ? Math.round((totalWins / totalMatches) * 100) : 0;
+
+      document.getElementById("profileName").innerText = data.name;
+      document.getElementById("profileUsername").innerText = "@" + data.username;
+      document.getElementById("profileBio").innerText = data.bio || "Saya suka belajar hal baru.";
+      document.getElementById("profileCountry").innerText = data.country || "Indonesia";
+      document.getElementById("profileClass").innerText = data.class_level || "Kelas 10";
+      document.getElementById("profileSchool").innerText = data.school || "";
+      const avatarUrl = data.avatar || "https://i.pravatar.cc/100?img=12";
+      document.getElementById("profileAvatar").src = avatarUrl;
+      document.getElementById("navProfileImg").src = avatarUrl;
+      document.getElementById("profileLevelChip").innerText = "Lv. " + level.level;
+      document.getElementById("accountLevel").innerText = "Level " + level.level;
+      document.getElementById("accountExpFill").style.width = level.percent + "%";
+      document.getElementById("accountExpText").innerText = `${level.current} / ${level.next} EXP`;
+      
+      const totalElo = (data.elo_matematika||420) + (data.elo_fisika||228) + (data.elo_bahasainggris||170) + (data.elo_informatika||760);
+      document.getElementById("profileTotalELO").innerText = totalElo.toLocaleString();
+      document.getElementById("profileMatches").innerText = totalMatches.toLocaleString();
+      document.getElementById("profileWinrate").innerText = winrate + "%";
+
+      document.getElementById("profileSubjectRanks").innerHTML = SUBJECTS.map(subject => {
+        const elo = data['elo_' + subject.key.replace('-', '')] || 0; // Handle keys
+        const rank = getRankFromELO(elo);
+        const progress = getRankProgress(elo);
+        const highest = data['highest_' + subject.key.replace('-', '')] || rank.name;
+        return `
+          <button class="rank-subject-card" onclick="showRankInfoModal('${subject.key}')">
+            <div class="rank-subject-main">
+              <span class="rank-mini-badge ${rank.class}"><i class="fa-solid ${rank.icon}"></i></span>
+              <div>
+                <h4>${subject.label}</h4>
+                <p>Current ${rank.name} · Highest ${highest}</p>
+              </div>
+            </div>
+            <strong>${elo.toLocaleString()} ELO</strong>
+            <div class="rank-info-progress"><div class="rank-info-progress-fill" style="width:${progress.percent}%"></div></div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function openEditProfileModal() {
+      if(!currentProfileData) return;
+      document.getElementById("editName").value = currentProfileData.name || "";
+      document.getElementById("editUsername").value = currentProfileData.username || "";
+      document.getElementById("editEmail").value = currentProfileData.email || "";
+      document.getElementById("editBio").value = currentProfileData.bio || "";
+      document.getElementById("editCountry").value = currentProfileData.country || "";
+      document.getElementById("editClass").value = currentProfileData.class_level || "";
+      document.getElementById("editSchool").value = currentProfileData.school || "";
+      document.getElementById("editAvatarPreview").src = currentProfileData.avatar || "https://i.pravatar.cc/100?img=12";
+      document.getElementById("editProfileOverlay").classList.add("show");
+    }
+
+    function closeEditProfileModal() {
+      document.getElementById("editProfileOverlay").classList.remove("show");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderProfile();
+      document.getElementById("editAvatarInput").addEventListener("change", function() {
+        if(this.files && this.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            currentProfileData.avatar = event.target.result;
+            document.getElementById("editAvatarPreview").src = event.target.result;
+          };
+          reader.readAsDataURL(this.files[0]);
+        }
+      });
+      document.getElementById("editProfileForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        
+        const updateData = {
+          name: document.getElementById("editName").value,
+          username: document.getElementById("editUsername").value,
+          bio: document.getElementById("editBio").value,
+          country: document.getElementById("editCountry").value,
+          class_level: document.getElementById("editClass").value,
+          school: document.getElementById("editSchool").value,
+          avatar: currentProfileData.avatar
+        };
+
+        try {
+          const token = localStorage.getItem("edurank_token");
+          const res = await fetch(getApiUrl('/api/profile'), {
+            method: "PUT",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify(updateData)
+          });
+          if(res.ok) {
+            closeEditProfileModal();
+            renderProfile();
+            showCustomAlert("Profile berhasil diperbarui.", "success");
+          } else {
+            const data = await res.json();
+            showCustomAlert(data.error || "Gagal update profile", "error");
+          }
+        } catch(e) {
+          showCustomAlert("Gagal terhubung ke server", "error");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

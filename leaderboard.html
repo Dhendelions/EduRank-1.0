@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .leaderboard-section {
+        padding-top: 40px;
+        min-height: 80vh;
+    }
+    .leaderboard-container {
+        max-width: 1040px;
+        margin: 0 auto;
+        background: var(--surface-glass);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+    :root.dark .leaderboard-container,
+    body.dark .leaderboard-container { background: var(--surface-glass); }
+    .leaderboard-header {
+        background: var(--gradient-main);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .leaderboard-header h2 {
+        font-size: 1.5rem;
+    }
+    .leaderboard-list {
+        list-style: none;
+    }
+    .leaderboard-item {
+        display: grid;
+        grid-template-columns: 58px 1.4fr 0.8fr 0.7fr 0.9fr;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 26px;
+        border-bottom: 1px solid var(--border);
+        transition: 0.3s ease;
+    }
+    .leaderboard-item:hover {
+        background: var(--primary-soft);
+        transform: translateX(4px);
+    }
+    :root.dark .leaderboard-item:hover {
+        background: var(--border);
+    }
+    .leaderboard-item:last-child {
+        border-bottom: none;
+    }
+    .rank-num {
+        font-size: 1.35rem;
+        font-weight: 700;
+        width: 52px;
+        color: var(--text-light);
+    }
+    .rank-1 .rank-num { color: #f59e0b; }
+    .rank-2 .rank-num { color: #94a3b8; }
+    .rank-3 .rank-num { color: #d97706; }
+    
+    .player-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+    }
+    .player-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        object-fit: cover;
+        border: 2px solid rgba(127,119,221,0.34);
+    }
+    .player-details h4 {
+        margin-bottom: 2px;
+        font-size: 1rem;
+    }
+    .player-details p {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+    .player-score {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--primary);
+    }
+    .player-score span,
+    .leaderboard-meta span {
+        display: block;
+        color: var(--text-light);
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-top: 3px;
+    }
+    .leaderboard-meta {
+        color: var(--text);
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .leaderboard-item.is-me {
+        background: rgba(127,119,221,0.16);
+        box-shadow: inset 3px 0 0 var(--primary);
+    }
+    .leaderboard-rank-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        width: fit-content;
+        padding: 7px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+    @media(max-width: 820px) {
+        .leaderboard-item {
+            grid-template-columns: 44px 1fr;
+        }
+        .player-score,
+        .leaderboard-meta,
+        .leaderboard-rank-chip {
+            grid-column: 2;
+        }
+        .leaderboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="index.html?view=main#home" class="nav-logo" style="text-decoration:none;">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </a>
+
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html?view=main#home" class="nav-link">Home</a>
+        <a href="index.html?view=main#materi" class="nav-link">Materi</a>
+        <a href="index.html?view=main#ranked" class="nav-link">Ranked</a>
+        <a href="leaderboard.html" class="nav-link active-link">Leaderboard</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+        </button>
+        <div class="nav-search dropdown-container">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Cari username..." id="searchInput"/>
+          <div class="dropdown-menu" id="searchDropdown"></div>
+        </div>
+        <div class="dropdown-container">
+          <button class="nav-icon-btn" onclick="toggleDropdown('notifDropdown')">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+          <div class="dropdown-menu" id="notifDropdown" style="right: 0; min-width: 250px;">
+            <div class="dropdown-item">Tidak ada notifikasi</div>
+          </div>
+        </div>
+        <a href="profile.html" class="profile-btn">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
+        </a>
+      </div>
+<button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+  <i class="fa-solid fa-bars"></i>
+</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="leaderboard-section">
+      <div class="container">
+        <div class="section-title">
+          <h2>Leaderboard</h2>
+          <p>Pemain terbaik berdasarkan akumulasi poin Ranked di berbagai tingkat wilayah.</p>
+        </div>
+        
+        
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="secondary-btn active" id="tabNasional" style="background:var(--primary); color:white;" onclick="changeRegion('Nasional')">Nasional</button>
+            <button class="secondary-btn" id="tabProvinsi" onclick="changeRegion('Provinsi')">Provinsi</button>
+            <button class="secondary-btn" id="tabKota" onclick="changeRegion('Kota')">Kab/Kota</button>
+            <button class="secondary-btn" id="tabSekolah" onclick="changeRegion('Sekolah')">Sekolah</button>
+        </div>
+        
+        <div class="leaderboard-container">
+          <div class="leaderboard-header">
+            <h2><i class="fa-solid fa-trophy" style="color: #fbbf24; margin-right: 10px;"></i> Top 10 <span id="lblRegion">Nasional</span></h2>
+            <select id="mapelSelect" class="leaderboard-filter" onchange="renderLeaderboard()" style="padding: 10px 36px 10px 14px; border-radius: 12px; outline: none; font-family: inherit;">
+                <option value="Semua Mapel">Semua Mapel</option>
+                <option value="Matematika">Matematika</option>
+                <option value="Fisika">Fisika</option>
+                <option value="Bahasa Inggris">Bahasa Inggris</option>
+                <option value="Informatika">Informatika</option>
+            </select>
+          </div>
+          
+          <ul class="leaderboard-list" id="lbList">
+             
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+      <p>© 2026 EduRank. All Rights Reserved.</p>
+    </div>
+  </footer>
+  <script src="api-config.js"></script>
+  <script src="interaksi.js"></script>
+  <script>
+    let currentRegion = 'Nasional';
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        })[character]);
+    }
+
+    function safeAvatarUrl(value) {
+        const url = String(value || '').trim();
+        return /^(https?:|data:image\/)/i.test(url) ? url : 'https://i.pravatar.cc/100?img=12';
+    }
+    
+    function changeRegion(region) {
+        currentRegion = region;
+        document.getElementById('tabNasional').style = "";
+        document.getElementById('tabProvinsi').style = "";
+        document.getElementById('tabKota').style = "";
+        document.getElementById('tabSekolah').style = "";
+        
+        ['tabNasional', 'tabProvinsi', 'tabKota', 'tabSekolah'].forEach(id => {
+            document.getElementById(id).classList.remove('active');
+            document.getElementById(id).style.background = "";
+            document.getElementById(id).style.color = "";
+        });
+        
+        const activeBtn = document.getElementById('tab' + (region === 'Kab/Kota' ? 'Kota' : region));
+        if(activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.style.background = "var(--primary)";
+            activeBtn.style.color = "white";
+        }
+        
+        document.getElementById('lblRegion').innerText = region;
+        renderLeaderboard();
+    }
+    
+    async function renderLeaderboard() {
+        const list = document.getElementById('lbList');
+        const mapelSelect = document.getElementById('mapelSelect').value;
+        list.innerHTML = 'Loading...';
+        
+        const subjectMap = {
+            "Semua Mapel": "all",
+            "Matematika": "matematika",
+            "Fisika": "fisika",
+            "Bahasa Inggris": "bahasainggris",
+            "Informatika": "informatika"
+        };
+        const querySubject = subjectMap[mapelSelect] || "all";
+        
+        try {
+            const res = await fetch(getApiUrl(`/api/leaderboard?subject=${querySubject}`));
+            if(!res.ok) throw new Error("API fail");
+            const data = await res.json();
+            
+            list.innerHTML = '';
+            
+            const myUsername = localStorage.getItem("username");
+
+            data.forEach((p, idx) => {
+                let rankClass = '';
+                let rankNum = idx + 1;
+                if(rankNum === 1) rankClass = 'rank-1';
+                else if(rankNum === 2) rankClass = 'rank-2';
+                else if(rankNum === 3) rankClass = 'rank-3';
+                
+                let currentElo = 0;
+                if(querySubject === 'all') currentElo = p.total_elo || 0;
+                else currentElo = p[`elo_${querySubject}`] || 0;
+                
+                const rank = getRankFromELO(currentElo);
+                const winrate = p.matches ? Math.round((p.wins / p.matches) * 100) : 0;
+                const isMe = p.username === myUsername;
+                
+                let html = `
+                <li class="leaderboard-item ${rankClass} ${isMe ? 'is-me' : ''}">
+                  <div class="rank-num">#${rankNum}</div>
+                  <div class="player-info">
+                    <img src="${escapeHtml(safeAvatarUrl(p.avatar))}" alt="Avatar" class="player-avatar">
+                    <div class="player-details">
+                      <h4>${escapeHtml(p.name || 'Anonymous')} ${isMe ? '(You)' : ''}</h4>
+                      <p>@${escapeHtml(p.username || 'user')}</p>
+                    </div>
+                  </div>
+                  <div class="player-score">${currentElo.toLocaleString()} ELO <span>${rank.name}</span></div>
+                  <div class="leaderboard-meta">${winrate}% <span>Winrate</span></div>
+                  <div class="leaderboard-meta">${escapeHtml(p.school || '-')} <span>${escapeHtml(p.country || 'Indonesia')}</span></div>
+                </li>
+                `;
+                list.innerHTML += html;
+            });
+            if(data.length === 0) list.innerHTML = '<p style="text-align:center; padding: 20px;">Belum ada pemain.</p>';
+        } catch(e) {
+            console.error(e);
+            list.innerHTML = '<p style="text-align:center; color:red;">Gagal memuat leaderboard dari server.</p>';
+        }
+    }
+    
+    // Init
+    document.addEventListener("DOMContentLoaded", () => {
+        // Need to add listener to select
+        const mapelSelect = document.getElementById('mapelSelect');
+        if(mapelSelect) mapelSelect.addEventListener('change', renderLeaderboard);
+        renderLeaderboard();
+    });
+  </script>
+</body>
+</html>

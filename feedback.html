@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedback - EduRank</title>
+  <script>
+      document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    .feedback-page {
+        padding-top: 40px;
+        min-height: 80vh;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <nav class="navbar container">
+      <a href="index.html?view=main#home" class="nav-logo" style="text-decoration:none;">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </a>
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html?view=main#home" class="nav-link">Home</a>
+        <a href="index.html?view=main#materi" class="nav-link">Materi</a>
+        <a href="index.html?view=main#ranked" class="nav-link">Ranked</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="feedback.html" class="nav-link active-link">Feedback</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+        </button>
+        <a href="profile.html" class="profile-btn" style="display:block;">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
+        </a>
+      </div>
+      <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </nav>
+  </header>
+
+  <main class="feedback-page">
+    <section class="feedback-section" id="feedback">
+      <div class="container">
+        <div class="section-title">
+          <h2>Feedback & Kontak</h2>
+          <p>Berikan saran, kritik, atau pertanyaan untuk EduRank.</p>
+        </div>
+        <div class="feedback-wrapper">
+          <div class="feedback-info">
+            <h3>Hubungi Kami</h3>
+            <p>EduRank terus berkembang untuk memberikan pengalaman belajar terbaik bagi pelajar Indonesia.</p>
+            <div class="contact-item">
+              <i class="fa-solid fa-envelope"></i>
+              <span>support@edurank.id</span>
+            </div>
+            <div class="contact-item">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Jakarta, Indonesia</span>
+            </div>
+          </div>
+          <form class="feedback-form" id="feedbackForm">
+            <div class="form-group">
+              <label>Nama Lengkap</label>
+              <input type="text" id="feedbackName" placeholder="Masukkan nama lengkap" required />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="feedbackEmail" placeholder="Masukkan email" required />
+            </div>
+            <div class="form-group">
+              <label>Pesan</label>
+              <textarea id="feedbackMessage" rows="5" maxlength="2000" placeholder="Tulis feedback atau pertanyaan..." required></textarea>
+            </div>
+            <button type="submit" class="primary-btn">Kirim Feedback</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+      <p>© 2026 EduRank. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script src="interaksi.js"></script>
+  <script>
+    document.getElementById('feedbackForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
+      try {
+        const response = await fetch(getApiUrl('/api/feedback'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('feedbackName').value,
+            email: document.getElementById('feedbackEmail').value,
+            message: document.getElementById('feedbackMessage').value
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Feedback gagal dikirim.');
+
+        event.currentTarget.reset();
+        showCustomAlert('Feedback berhasil dikirim. Terima kasih!', 'success');
+      } catch (error) {
+        showCustomAlert(error.message || 'Gagal terhubung ke server.', 'error');
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

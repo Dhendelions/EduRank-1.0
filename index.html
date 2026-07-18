@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>EduRank - Competitive Learning Platform</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body class="dark auth-locked">
+
+  
+  
+  
+
+  <section class="auth-gate" id="authGate" aria-label="Login dan daftar EduRank">
+    <div class="auth-shell">
+      <div class="auth-brand-panel">
+        <div class="auth-brand">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>EduRank</span>
+        </div>
+        <h1>Masuk dulu, lalu mulai belajar kompetitif.</h1>
+        <p>
+          Buat akun atau login untuk menyimpan progress, rank, dan profil belajarmu.
+        </p>
+        <div class="auth-highlights">
+          <span><i class="fa-solid fa-shield-halved"></i> Validasi form</span>
+          <span><i class="fa-solid fa-moon"></i> Dark theme utama</span>
+          <span><i class="fa-solid fa-ranking-star"></i> Progress tersimpan</span>
+        </div>
+      </div>
+
+      <div class="auth-panel">
+        <div class="auth-topbar">
+          <div>
+            <span class="auth-eyebrow">Welcome</span>
+            <h2 id="authTitle">Daftar Akun</h2>
+          </div>
+          <button class="auth-theme-btn" type="button" onclick="toggleDarkMode()" aria-label="Ganti tema">
+            <i class="fa-solid fa-moon" id="authThemeIcon"></i>
+          </button>
+        </div>
+
+        <div class="auth-tabs" role="tablist" aria-label="Pilih daftar atau login">
+          <button class="auth-tab active" id="registerTab" type="button" data-auth-tab="register">Daftar</button>
+          <button class="auth-tab" id="loginTab" type="button" data-auth-tab="login">Login</button>
+        </div>
+
+        <form class="auth-form" id="registerForm" novalidate>
+          <label class="auth-field">
+            <span>Nama Lengkap</span>
+            <div class="auth-input-wrap">
+              <i class="fa-regular fa-user"></i>
+              <input type="text" id="authFullName" autocomplete="name" placeholder="Masukkan nama lengkap" />
+            </div>
+            <small class="auth-warning" id="authFullNameWarning"></small>
+          </label>
+
+          <label class="auth-field">
+            <span>Tanggal Lahir</span>
+            <div class="auth-input-wrap">
+              <i class="fa-regular fa-calendar"></i>
+              <input type="date" id="authBirthDate" autocomplete="bday" />
+            </div>
+            <small class="auth-warning" id="authBirthDateWarning"></small>
+          </label>
+
+          <div class="auth-camera-grid">
+            <label class="auth-field auth-upload-field">
+              <span>Foto Pelajar</span>
+              <div class="auth-upload-box" data-upload-box="studentPhoto">
+                <input type="file" id="studentPhotoInput" accept="image/*" capture="environment" />
+                <div class="auth-upload-preview" id="studentPhotoPreview">
+                  <i class="fa-solid fa-camera"></i>
+                  <strong>Ambil foto pelajar</strong>
+                  <small>Gunakan kamera belakang HP/tablet jika kamera PC tidak tersedia.</small>
+                </div>
+              </div>
+              <small class="auth-warning" id="studentPhotoWarning"></small>
+            </label>
+
+            <label class="auth-field auth-upload-field">
+              <span>Foto Wajah + Kartu Pelajar</span>
+              <div class="auth-upload-box" data-upload-box="studentCardPhoto">
+                <input type="file" id="studentCardPhotoInput" accept="image/*" capture="user" />
+                <div class="auth-upload-preview" id="studentCardPhotoPreview">
+                  <i class="fa-solid fa-id-card-clip"></i>
+                  <strong>Wajah dan kartu</strong>
+                  <small>Pastikan wajah dan kartu pelajar terlihat jelas dalam satu foto.</small>
+                </div>
+              </div>
+              <small class="auth-warning" id="studentCardPhotoWarning"></small>
+            </label>
+          </div>
+
+          <label class="auth-field">
+            <span>Email</span>
+            <div class="auth-input-wrap">
+              <i class="fa-regular fa-envelope"></i>
+              <input type="email" id="authRegisterEmail" autocomplete="email" placeholder="nama@email.com" />
+            </div>
+            <small class="auth-warning" id="authRegisterEmailWarning"></small>
+          </label>
+
+          <label class="auth-field">
+            <span>Password</span>
+            <div class="auth-input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="authRegisterPassword" autocomplete="new-password" placeholder="Minimal 8 karakter" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterPassword" aria-label="Tampilkan password">
+                <i class="fa-regular fa-eye-slash"></i>
+              </button>
+            </div>
+            <small class="auth-warning" id="authRegisterPasswordWarning"></small>
+          </label>
+
+          <label class="auth-field">
+            <span>Konfirmasi Password</span>
+            <div class="auth-input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="authRegisterConfirm" autocomplete="new-password" placeholder="Ulangi password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterConfirm" aria-label="Tampilkan konfirmasi password">
+                <i class="fa-regular fa-eye-slash"></i>
+              </button>
+            </div>
+            <small class="auth-warning" id="authRegisterConfirmWarning"></small>
+          </label>
+
+          <button class="primary-btn auth-submit" type="submit">Daftar dan Masuk</button>
+          <button class="auth-google-btn" type="button" disabled title="Login Google belum dikonfigurasi">
+            <i class="fa-brands fa-google"></i>
+            Daftar lewat Google (segera hadir)
+          </button>
+          <p class="auth-switch-text">Sudah punya akun? <button type="button" data-auth-switch="login">Login</button></p>
+        </form>
+
+        <form class="auth-form hidden" id="loginForm" novalidate>
+          <label class="auth-field">
+            <span>Email</span>
+            <div class="auth-input-wrap">
+              <i class="fa-regular fa-envelope"></i>
+              <input type="email" id="authLoginEmail" autocomplete="email" placeholder="nama@email.com" />
+            </div>
+            <small class="auth-warning" id="authLoginEmailWarning"></small>
+          </label>
+
+          <label class="auth-field">
+            <span>Password</span>
+            <div class="auth-input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="authLoginPassword" autocomplete="current-password" placeholder="Masukkan password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginPassword" aria-label="Tampilkan password login">
+                <i class="fa-regular fa-eye-slash"></i>
+              </button>
+            </div>
+            <small class="auth-warning" id="authLoginPasswordWarning"></small>
+          </label>
+
+          <label class="auth-field">
+            <span>Konfirmasi Password</span>
+            <div class="auth-input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="authLoginConfirm" autocomplete="current-password" placeholder="Ulangi password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginConfirm" aria-label="Tampilkan konfirmasi password login">
+                <i class="fa-regular fa-eye-slash"></i>
+              </button>
+            </div>
+            <small class="auth-warning" id="authLoginConfirmWarning"></small>
+          </label>
+
+          <button class="primary-btn auth-submit" type="submit">Login</button>
+          <button class="auth-google-btn" type="button" disabled title="Login Google belum dikonfigurasi">
+            <i class="fa-brands fa-google"></i>
+            Login lewat Google (segera hadir)
+          </button>
+          <p class="auth-switch-text">Belum punya akun? <button type="button" data-auth-switch="register">Daftar</button></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  
+  
+  
+
+  <section class="learning-quiz hidden" id="learningQuiz" aria-label="Tes gaya belajar VAK">
+    <div class="quiz-shell">
+      <div class="quiz-header">
+        <div class="quiz-brand">
+          <i class="fa-solid fa-brain"></i>
+          <span>Tes Gaya Belajar</span>
+        </div>
+        <button class="auth-theme-btn" type="button" onclick="toggleDarkMode()" aria-label="Ganti tema">
+          <i class="fa-solid fa-moon" id="quizThemeIcon"></i>
+        </button>
+      </div>
+
+      <div class="quiz-hero">
+        <span class="auth-eyebrow">Visual - Kinestetik - Read/Write</span>
+        <h1>Temukan cara belajar yang paling cocok untukmu.</h1>
+        <p>
+          Pilih jawaban yang paling menggambarkan kebiasaanmu. Hasilnya akan disimpan ke profil belajar EduRank.
+        </p>
+      </div>
+
+      <form class="vak-form" id="vakForm" novalidate>
+        <div class="vak-question" data-question="q1">
+          <div class="vak-question-title">
+            <span>1</span>
+            <h2>Saat mempelajari cara baru, Anda lebih suka...</h2>
+          </div>
+          <div class="vak-options">
+            <label class="vak-option visual">
+              <input type="radio" name="q1" value="visual" />
+              <i class="fa-regular fa-image"></i>
+              <span>Membaca instruksi atau melihat diagram</span>
+            </label>
+            <label class="vak-option kinesthetic">
+              <input type="radio" name="q1" value="kinesthetic" />
+              <i class="fa-solid fa-hand-pointer"></i>
+              <span>Langsung mencoba atau mempraktikkannya</span>
+            </label>
+            <label class="vak-option readwrite">
+              <input type="radio" name="q1" value="readwrite" />
+              <i class="fa-solid fa-pen-nib"></i>
+              <span>Mencatat ulang langkah penting dengan bahasa sendiri</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="vak-question" data-question="q2">
+          <div class="vak-question-title">
+            <span>2</span>
+            <h2>Saat berkonsentrasi atau belajar, Anda biasanya...</h2>
+          </div>
+          <div class="vak-options">
+            <label class="vak-option visual">
+              <input type="radio" name="q2" value="visual" />
+              <i class="fa-solid fa-book-open-reader"></i>
+              <span>Suka suasana tenang dan fokus pada bacaan atau gambar</span>
+            </label>
+            <label class="vak-option kinesthetic">
+              <input type="radio" name="q2" value="kinesthetic" />
+              <i class="fa-solid fa-pen-nib"></i>
+              <span>Suka mencoret-coret, bergerak, atau berjalan-jalan</span>
+            </label>
+            <label class="vak-option readwrite">
+              <input type="radio" name="q2" value="readwrite" />
+              <i class="fa-solid fa-list-check"></i>
+              <span>Suka membuat rangkuman, tabel, atau daftar rumus</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="vak-question" data-question="q3">
+          <div class="vak-question-title">
+            <span>3</span>
+            <h2>Apa yang paling Anda ingat dari seseorang?</h2>
+          </div>
+          <div class="vak-options">
+            <label class="vak-option visual">
+              <input type="radio" name="q3" value="visual" />
+              <i class="fa-regular fa-face-smile"></i>
+              <span>Wajah atau gaya pakaiannya</span>
+            </label>
+            <label class="vak-option kinesthetic">
+              <input type="radio" name="q3" value="kinesthetic" />
+              <i class="fa-solid fa-heart"></i>
+              <span>Perasaan atau kesan saat bersamanya</span>
+            </label>
+            <label class="vak-option readwrite">
+              <input type="radio" name="q3" value="readwrite" />
+              <i class="fa-regular fa-note-sticky"></i>
+              <span>Catatan, nama, atau detail yang pernah Anda tulis</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="vak-question" data-question="q4">
+          <div class="vak-question-title">
+            <span>4</span>
+            <h2>Saat bingung, apa yang paling membantu?</h2>
+          </div>
+          <div class="vak-options">
+            <label class="vak-option visual">
+              <input type="radio" name="q4" value="visual" />
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>Membuat peta konsep atau coretan visual</span>
+            </label>
+            <label class="vak-option kinesthetic">
+              <input type="radio" name="q4" value="kinesthetic" />
+              <i class="fa-solid fa-person-running"></i>
+              <span>Menggerakkan tubuh atau mencoba langsung</span>
+            </label>
+            <label class="vak-option readwrite">
+              <input type="radio" name="q4" value="readwrite" />
+              <i class="fa-solid fa-book-open-reader"></i>
+              <span>Membaca ulang teori lalu menulis langkah penyelesaian</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="vak-question" data-question="q5">
+          <div class="vak-question-title">
+            <span>5</span>
+            <h2>Ketika pergi ke tempat baru, Anda lebih suka...</h2>
+          </div>
+          <div class="vak-options">
+            <label class="vak-option visual">
+              <input type="radio" name="q5" value="visual" />
+              <i class="fa-regular fa-map"></i>
+              <span>Melihat peta</span>
+            </label>
+            <label class="vak-option kinesthetic">
+              <input type="radio" name="q5" value="kinesthetic" />
+              <i class="fa-solid fa-shoe-prints"></i>
+              <span>Langsung berjalan dan merasakannya</span>
+            </label>
+            <label class="vak-option readwrite">
+              <input type="radio" name="q5" value="readwrite" />
+              <i class="fa-solid fa-clipboard-list"></i>
+              <span>Membaca petunjuk tertulis atau membuat daftar rute</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="vak-result hidden" id="vakResult"></div>
+
+        <div class="vak-actions">
+          <button class="secondary-btn" type="button" id="vakResetBtn">Reset Jawaban</button>
+          <button class="primary-btn" type="submit" id="vakSubmitBtn">Lihat Hasil</button>
+          <button class="primary-btn hidden" type="button" id="vakContinueBtn">Lanjut ke Web</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  
+  
+  
+
+  <header class="header">
+
+    <nav class="navbar container">
+
+      
+      <div class="nav-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+
+      
+      <div class="nav-menu" id="navMenu">
+
+        <a href="#home" class="nav-link active-link">
+          Home
+        </a>
+
+        <a href="#materi" class="nav-link">
+          Materi
+        </a>
+
+        <a href="#ranked" class="nav-link">
+          Ranked
+        </a>
+
+        <a href="leaderboard.html" class="nav-link">
+          Leaderboard
+        </a>
+
+        <a href="feedback.html" class="nav-link">
+          Feedback
+        </a>
+
+      </div>
+
+      
+      <div class="nav-actions">
+
+        
+        <div class="nav-search dropdown-container">
+
+          <i class="fa-solid fa-magnifying-glass"></i>
+
+          <input
+            type="text"
+            placeholder="Cari materi..."
+            id="searchInput"
+          />
+          
+          <div class="dropdown-menu" id="searchDropdown">
+            <a href="#" class="dropdown-item">Materi Matematika SMA</a>
+            <a href="#" class="dropdown-item">Materi Fisika Kelas 10</a>
+            <a href="#" class="dropdown-item">Latihan Soal UTBK</a>
+          </div>
+
+        </div>
+
+        
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+        </button>
+
+        
+        <div class="dropdown-container">
+          <button class="nav-icon-btn" onclick="toggleDropdown('notifDropdown')">
+
+            <i class="fa-solid fa-bell"></i>
+
+            <span class="notif-dot"></span>
+
+          </button>
+          
+          <div class="dropdown-menu" id="notifDropdown" style="right: 0; min-width: 250px;">
+            <div class="dropdown-item"><strong>Admin</strong><br/>Selamat datang di EduRank!</div>
+            <div class="dropdown-item"><strong>Sistem</strong><br/>Ada event ranked baru besok.</div>
+          </div>
+        </div>
+
+        
+        <a href="profile.html" class="profile-btn" style="display:block;">
+
+          <img
+            src="https://i.pravatar.cc/100?img=12"
+            alt="Profile"
+            id="navProfileImg"
+          />
+
+        </a>
+
+        
+        <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+      </div>
+
+    </nav>
+
+  </header>
+
+  
+  
+  
+
+  <main>
+
+    
+    
+    
+
+    <section class="hero" id="home">
+      <div class="hero-bg-pattern"></div>
+
+      <div class="container hero-container">
+
+        
+        <div class="hero-left">
+
+          <div class="hero-badge">
+            #1 Competitive Learning Platform
+          </div>
+
+          <h1>
+            Belajar Jadi Lebih Seru
+            Dengan Sistem Ranked
+          </h1>
+
+          <p>
+            Tingkatkan kemampuan Matematika,
+            Fisika, Bahasa Inggris, dan Informatika
+            melalui battle realtime dan latihan interaktif.
+          </p>
+
+          <div class="hero-buttons">
+
+            <button class="primary-btn" onclick="openGameModal('ranked')">
+              Mulai Ranked
+            </button>
+
+            <button class="secondary-btn" onclick="openGameModal('custom')">
+              Custom Mode
+            </button>
+
+          </div>
+
+        </div>
+
+        
+        <div class="hero-right">
+
+          <div class="rank-card">
+
+            <div class="rank-top">
+
+              <h3 id="heroRankTitle">Matematika Rank</h3>
+
+              <button class="tier-badge diamond-badge rank-clickable" id="heroRankBadge" type="button"><i class="fa-solid fa-medal"></i> Bronze (0 ELO)</button>
+
+            </div>
+
+            <div class="progress">
+
+              <div class="progress-fill" id="heroRankProgress" style="width: 0%;"></div>
+
+            </div>
+            
+            <p style="text-align: right; font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-top: -20px; margin-bottom: 20px;" id="heroRankNext">0 ELO to Silver</p>
+
+            <div class="subject-rank-tabs" id="subjectRankTabs"></div>
+
+            <div class="rank-stats">
+
+              <div>
+                <h2>92%</h2>
+                <p>Accuracy</p>
+              </div>
+
+              <div>
+                <h2>125</h2>
+                <p>Wins</p>
+              </div>
+
+              <div>
+                <h2>18</h2>
+                <p>Win Streak</p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    
+    
+    
+
+    <section class="subjects" id="materi">
+
+      <div class="container">
+
+        <div class="section-title">
+
+          <h2>Bank Materi</h2>
+
+          <p>
+            Pilih jenjang pendidikan untuk memulai pembelajaran.
+          </p>
+
+        </div>
+
+        <div class="subject-grid">
+
+          
+          <div class="subject-card disabled-card">
+
+            <div class="soon-badge">
+              Coming Soon
+            </div>
+
+            <h3>SD</h3>
+
+            <p>
+              Materi SD sedang dikembangkan.
+            </p>
+
+          </div>
+
+          
+          <div class="subject-card disabled-card">
+
+            <div class="soon-badge">
+              Coming Soon
+            </div>
+
+            <h3>SMP</h3>
+
+            <p>
+              Materi SMP sedang dikembangkan.
+            </p>
+
+          </div>
+
+          
+          <a href="sma.html" class="subject-card-link" style="display:block; text-decoration:none;">
+            <div class="subject-card">
+              <div class="subject-icon math">
+                <i class="fa-solid fa-school"></i>
+              </div>
+              <h3>SMA</h3>
+              <p>
+                Fokus utama competitive learning.
+              </p>
+            </div>
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+    
+    
+    
+    
+
+    <section class="ranked-section" id="ranked">
+
+      <div class="container">
+
+        <div class="section-title">
+
+          <h2>Ranked Battle</h2>
+
+          <p>
+            Uji kemampuanmu melawan siswa lain secara realtime.
+          </p>
+
+        </div>
+
+        <div class="ranked-grid">
+
+          
+          <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('ranked')">
+            <div class="ranked-card">
+              <div class="ranked-icon solo-icon">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
+              <h3>Ranked Match</h3>
+              <p>
+                Kumpulkan poin dan naikkan rank-mu ke puncak.
+              </p>
+            </div>
+          </a>
+
+          
+          <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('classic')">
+            <div class="ranked-card">
+              <div class="ranked-icon team-icon">
+                <i class="fa-solid fa-gamepad"></i>
+              </div>
+              <h3>Classic Match</h3>
+              <p>
+                Latihan kompetitif tanpa risiko turun rank.
+              </p>
+            </div>
+          </a>
+
+          
+          <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('custom')">
+            <div class="ranked-card">
+              <div class="ranked-icon friend-icon">
+                <i class="fa-solid fa-users-gear"></i>
+              </div>
+              <h3>Custom Mode</h3>
+              <p>
+                Main bersama teman, tantang komputer, atau buat turnamen.
+              </p>
+            </div>
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    
+
+  </main>
+
+  
+  
+  
+
+  <footer class="footer">
+
+    <div class="container footer-content">
+
+      <div class="footer-logo">
+
+        <i class="fa-solid fa-graduation-cap"></i>
+
+        <span>EduRank</span>
+
+      </div>
+
+      <p>
+        © 2026 EduRank. All Rights Reserved.
+      </p>
+
+    </div>
+
+  </footer>
+
+  
+  <div class="modal-overlay" id="gameModalOverlay">
+    <div class="game-modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">Pilih Mode</h3>
+            <button class="modal-close" onclick="closeGameModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-options" id="modalOptions">
+            
+        </div>
+    </div>
+  </div>
+
+  
+  <script src="interaksi.js"></script>
+
+</body>
+</html>

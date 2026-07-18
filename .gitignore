@@ -1,0 +1,6 @@
+node_modules/
+server/node_modules/
+server/edurank.db
+server/edurank.json
+.DS_Store
+*.log

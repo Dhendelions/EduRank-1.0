@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teman & Custom Room - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .friends-page {
+        padding-top: 40px;
+        min-height: 80vh;
+    }
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 30px;
+    }
+    @media(max-width: 900px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+    .panel {
+        background: var(--surface-glass);
+        padding: 30px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    body.dark .panel { background: var(--surface); }
+    
+    .panel h3 {
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .add-friend-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+    .add-friend-form input {
+        flex: 1;
+        padding: 12px 15px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--text);
+    }
+    :root.dark .add-friend-form input,
+    body.dark .add-friend-form input { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+    
+    .friend-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .friend-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+    }
+    .friend-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .friend-info img {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .online { background: var(--success); }
+    .offline { background: var(--text-light); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="index.html?view=main#home" class="nav-logo" style="text-decoration:none;">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </a>
+      <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html?view=main#home" class="nav-link">Home</a>
+        <a href="index.html?view=main#materi" class="nav-link">Materi</a>
+        <a href="index.html?view=main#ranked" class="nav-link active-link">Ranked</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+        </button>
+        <a href="profile.html" class="profile-btn">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="friends-page container">
+      <a href="index.html?view=main#home" class="secondary-btn back-btn" style="display:inline-block; margin-bottom: 30px; text-decoration:none;">
+        <i class="fa-solid fa-arrow-left"></i> Kembali ke Home
+      </a>
+      
+      <div class="grid-2">
+        
+        <div class="panel">
+            <h3><i class="fa-solid fa-user-plus"></i> Tambah Teman</h3>
+            <div class="add-friend-form">
+                <input type="text" placeholder="Masukkan Username/ID Teman">
+                <button class="primary-btn" onclick="showCustomAlert('Permintaan pertemanan dikirim!', 'success')">Add</button>
+            </div>
+            
+            <hr style="border:0; border-top: 1px solid var(--border); margin: 20px 0;">
+            
+            <h3><i class="fa-solid fa-bell"></i> Request Masuk (1)</h3>
+            <div class="friend-item" style="padding: 10px;">
+                <div class="friend-info">
+                    <img src="https://i.pravatar.cc/100?img=8" alt="">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem;">Dimas A.</div>
+                        <div style="font-size:0.75rem; color:var(--text-light);">Level 12</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="primary-btn" style="padding: 5px 10px; border-radius:8px;" onclick="this.parentNode.parentNode.style.display='none'">✓</button>
+                    <button class="secondary-btn" style="padding: 5px 10px; border-radius:8px;" onclick="this.parentNode.parentNode.style.display='none'">✕</button>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="panel">
+            <h3><i class="fa-solid fa-user-group"></i> Daftar Teman & Custom Room</h3>
+            <p style="color:var(--text-light); margin-bottom: 20px; font-size: 0.9rem;">
+                Undang teman yang sedang online untuk bermain di Custom Room (Friend Match) atau tim 2v2.
+            </p>
+            
+            <div class="friend-list">
+                
+                <div class="friend-item">
+                    <div class="friend-info">
+                        <img src="https://i.pravatar.cc/100?img=3" alt="">
+                        <div>
+                            <div style="font-weight:600;">Kevin Wijaya</div>
+                            <div style="font-size:0.8rem; color:var(--text-light);"><span class="status-dot online"></span>Online</div>
+                        </div>
+                    </div>
+                    <button class="primary-btn" style="padding: 8px 15px;" onclick="localStorage.setItem('opponentName', 'Kevin Wijaya'); localStorage.setItem('opponentImg', 'https://i.pravatar.cc/100?img=3'); startGame('friend', 'Kevin Wijaya')">Invite Battle</button>
+                </div>
+                
+                
+                <div class="friend-item">
+                    <div class="friend-info">
+                        <img src="https://i.pravatar.cc/100?img=5" alt="">
+                        <div>
+                            <div style="font-weight:600;">Putri Ayu</div>
+                            <div style="font-size:0.8rem; color:var(--text-light);"><span class="status-dot online"></span>Online (In Match)</div>
+                        </div>
+                    </div>
+                    <button class="secondary-btn" style="padding: 8px 15px; opacity:0.5; cursor:not-allowed;">Spectate</button>
+                </div>
+                
+                
+                <div class="friend-item" style="opacity: 0.6;">
+                    <div class="friend-info">
+                        <img src="https://i.pravatar.cc/100?img=11" alt="">
+                        <div>
+                            <div style="font-weight:600;">Bagas P.</div>
+                            <div style="font-size:0.8rem; color:var(--text-light);"><span class="status-dot offline"></span>Offline 2 jam yang lalu</div>
+                        </div>
+                    </div>
+                    <button class="secondary-btn" style="padding: 8px 15px;" onclick="showCustomAlert('Pesan dikirim!', 'success')">Message</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+      <p>© 2026 EduRank. All Rights Reserved.</p>
+    </div>
+  </footer>
+  <script src="interaksi.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Materi Belajar - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <nav class="navbar container">
+      <a href="index.html?view=main#home" class="nav-logo" style="text-decoration:none;">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </a>
+      <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html?view=main#home" class="nav-link">Home</a>
+        <a href="index.html?view=main#materi" class="nav-link active-link">Materi</a>
+        <a href="index.html?view=main#ranked" class="nav-link">Ranked</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="feedback.html" class="nav-link">Feedback</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
+          <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+        </button>
+        <a href="profile.html" style="display:block;" class="profile-btn">
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="lesson-page">
+      <div class="container">
+        <a id="lessonBackLink" href="mapel.html" class="secondary-btn lesson-back">
+          <i class="fa-solid fa-arrow-left"></i> Kembali ke Mapel
+        </a>
+
+        <div class="lesson-hero">
+          <div>
+            <span class="lesson-eyebrow" id="lessonBreadcrumb">SMA / Kelas 10 / Matematika</span>
+            <h1 id="lessonTitle">Materi Belajar</h1>
+            <p id="lessonIntro">Pilih materi, lalu atur model gaya belajar yang paling nyaman.</p>
+          </div>
+          <div class="lesson-style-panel">
+            <span>Model Gaya Belajar</span>
+            <div class="learning-style-switch" id="learningStyleSwitch"></div>
+          </div>
+        </div>
+
+        <div class="lesson-layout">
+          <aside class="lesson-list-panel">
+            <div class="lesson-panel-header">
+              <span>Daftar Materi</span>
+              <strong id="lessonCount">0</strong>
+            </div>
+            <div class="lesson-list" id="lessonList"></div>
+          </aside>
+
+          <article class="lesson-content" id="lessonContent"></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>EduRank</span>
+      </div>
+      <p>&copy; 2026 EduRank. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script src="interaksi.js"></script>
+  <script src="materi.js"></script>
+</body>
+</html>

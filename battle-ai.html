@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS Computer - EduRank</title>
+  <script>
+    document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .battle-header {
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--surface-glass); padding: 15px 5%;
+        border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    :root.dark .battle-header, body.dark .battle-header { background: var(--surface); }
+    .vs-container { display: flex; align-items: center; gap: 20px; }
+    .player-card {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--surface-2); padding: 8px 15px; border-radius: 999px; border: 1px solid var(--border);
+    }
+    :root.dark .player-card, body.dark .player-card { background: var(--surface-2); }
+    .player-card img { width: 35px; height: 35px; border-radius: 50%; }
+    .vs-text { font-weight: 800; color: #ef4444; font-style: italic; font-size: 1.2rem; }
+    .timer {
+        font-size: 1.5rem; font-weight: 700; color: var(--primary);
+        display: flex; align-items: center; gap: 10px;
+    }
+    .question-section { padding: 40px 5%; max-width: 800px; margin: auto; }
+    .question-card {
+        background: var(--surface-glass); padding: 30px; border-radius: var(--radius);
+        box-shadow: var(--shadow); margin-bottom: 30px;
+    }
+    :root.dark .question-card, body.dark .question-card { background: var(--surface); }
+    .question-number { color: var(--primary); font-weight: 600; margin-bottom: 15px; display: flex; justify-content: space-between; }
+    .question-text { font-size: 1.2rem; margin-bottom: 25px; line-height: 1.6; }
+    .options { display: flex; flex-direction: column; gap: 15px; }
+    .option-label {
+        display: flex; align-items: center; padding: 15px 20px;
+        border: 2px solid var(--border); border-radius: 12px; cursor: pointer;
+        transition: 0.2s ease; font-weight: 500;
+    }
+    .option-label:hover { border-color: var(--primary); background: var(--primary-soft); }
+    :root.dark .option-label:hover, body.dark .option-label:hover { background: var(--border); }
+    .option-label input { margin-right: 15px; transform: scale(1.2); }
+    .submit-btn { width: 100%; margin-top: 20px; font-size: 1.1rem; }
+    .correct-answer { border-color: var(--success) !important; background: #dcfce7 !important; color: #166534; }
+    :root.dark .correct-answer { background: rgba(22, 101, 52, 0.3) !important; color: #4ade80; }
+    .wrong-answer { border-color: #ef4444 !important; background: #fee2e2 !important; color: #991b1b; }
+    :root.dark .wrong-answer { background: rgba(153, 27, 27, 0.3) !important; color: #f87171; }
+    .feedback-msg { text-align: center; font-weight: 600; margin-top: 15px; font-size: 1.1rem; display: none; }
+    .ai-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: linear-gradient(135deg, #14b8a6, #0ea5e9);
+        color: white; font-size: 0.7rem; padding: 3px 10px; border-radius: 999px;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .ai-thinking {
+        display: none; align-items: center; gap: 8px; padding: 12px 20px;
+        background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border);
+        margin-top: 15px; font-size: 0.9rem; color: var(--text-light);
+    }
+    .ai-thinking.show { display: flex; }
+    .ai-thinking .dots span {
+        display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--primary); margin: 0 2px; animation: dotPulse 1.4s infinite ease-in-out;
+    }
+    .ai-thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotPulse {
+        0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+    @media(max-width: 768px) {
+        .vs-container { flex-direction: column; gap: 10px; }
+        .battle-header { flex-direction: column; gap: 15px; padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="battle-header">
+    <a href="#" onclick="confirmExit()" style="color: var(--text-light); text-decoration: none; font-size: 1.5rem;">
+        <i class="fa-solid fa-xmark"></i>
+    </a>
+
+    <div class="vs-container">
+        <div class="player-card">
+            <img src="https://i.pravatar.cc/100?img=12" id="myAvatar" alt="You">
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600;" id="myName">You</div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Score: <span id="myScore">0</span></div>
+            </div>
+        </div>
+        <div class="vs-text">VS</div>
+        <div class="player-card">
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600;" id="oppName">
+                    EduBot <span class="ai-badge"><i class="fa-solid fa-microchip"></i> AI</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-light);">Score: <span id="oppScore">0</span></div>
+            </div>
+            <img src="https://api.dicebear.com/8.x/bottts-neutral/svg?seed=edurank-computer" id="oppImg" alt="AI">
+        </div>
+    </div>
+
+    <div class="timer">
+        <i class="fa-regular fa-clock"></i>
+        <span id="countdown">00:00</span>
+    </div>
+  </div>
+
+  <main class="question-section">
+    <div class="question-card">
+        <div class="question-number">
+            <span id="qNumText">Soal 1 / 5</span>
+            <span id="diffBadge" style="font-size:0.8rem; opacity:0.7;"></span>
+        </div>
+        <div class="question-text" id="qText">Memuat pertanyaan...</div>
+        <form id="battleForm">
+            <div class="options" id="optionsContainer"></div>
+            <div id="feedbackMsg" class="feedback-msg"></div>
+            <div class="ai-thinking" id="aiThinking">
+                <i class="fa-solid fa-robot" style="color:var(--primary);"></i>
+                <span>EduBot sedang berpikir</span>
+                <span class="dots"><span></span><span></span><span></span></span>
+            </div>
+            <button type="button" class="primary-btn submit-btn" id="actionBtn" onclick="handleAnswer()">Jawab</button>
+        </form>
+    </div>
+  </main>
+
+  <script src="interaksi.js"></script>
+  <script src="questions.js"></script>
+  <script>
+    // ===== AI CONFIG =====
+    const AI_PROFILES = {
+        easy: {
+            name: "EduBot Easy",
+            accuracy: 0.40,
+            minDelay: 4000,
+            maxDelay: 8000,
+            avatar: "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=edubot-easy",
+            badge: "🟢 Easy"
+        },
+        normal: {
+            name: "EduBot Normal",
+            accuracy: 0.65,
+            minDelay: 2500,
+            maxDelay: 5500,
+            avatar: "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=edubot-normal",
+            badge: "🟡 Normal"
+        },
+        hard: {
+            name: "EduBot Hard",
+            accuracy: 0.85,
+            minDelay: 1200,
+            maxDelay: 3000,
+            avatar: "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=edubot-hard",
+            badge: "🔴 Hard"
+        }
+    };
+
+    // ===== STATE =====
+    const difficulty = localStorage.getItem("aiDifficulty") || "normal";
+    const subject = localStorage.getItem("selectedSubject") || "matematika";
+    const ai = AI_PROFILES[difficulty] || AI_PROFILES.normal;
+
+    const TOTAL_QUESTIONS = 5;
+    let questions = [];
+    let currentQ = 0;
+    let myScore = 0;
+    let aiScore = 0;
+    let playerAnswers = [];  // { qIndex, playerAnswer, aiAnswer, correct, aiCorrect }
+    let answered = false;
+    let aiAnswered = false;
+    let matchFinished = false;
+    let timeInSeconds = 0;
+    let timerInterval = null;
+    let aiTimeout = null;
+
+    // ===== INIT =====
+    function initBattle() {
+        // Set UI
+        document.getElementById("myName").innerText = localStorage.getItem("name") || "You";
+        document.getElementById("oppName").innerHTML = `${ai.name} <span class="ai-badge"><i class="fa-solid fa-microchip"></i> AI</span>`;
+        document.getElementById("oppImg").src = ai.avatar;
+        document.getElementById("diffBadge").innerText = ai.badge;
+
+        // Get questions
+        questions = getRandomQuestions(subject, TOTAL_QUESTIONS);
+        if(questions.length === 0) {
+            document.getElementById("qText").innerText = "Tidak ada soal untuk mapel ini.";
+            return;
+        }
+
+        // Start timer
+        timerInterval = setInterval(() => {
+            timeInSeconds++;
+            const el = document.getElementById("countdown");
+            let m = Math.floor(timeInSeconds / 60);
+            let s = timeInSeconds % 60;
+            el.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+        }, 1000);
+
+        showQuestion(0);
+    }
+
+    // ===== QUESTION FLOW =====
+    function showQuestion(idx) {
+        if(idx >= questions.length || matchFinished) {
+            finishMatch();
+            return;
+        }
+
+        currentQ = idx;
+        answered = false;
+        aiAnswered = false;
+        const q = questions[idx];
+
+        document.getElementById("qNumText").innerText = `Soal ${idx + 1} / ${questions.length}`;
+        document.getElementById("qText").innerText = q.q;
+
+        const container = document.getElementById("optionsContainer");
+        container.innerHTML = "";
+        const labels = ['A', 'B', 'C', 'D'];
+        q.options.forEach((opt, i) => {
+            container.innerHTML += `
+                <label class="option-label" id="lbl_${i}">
+                    <input type="radio" name="answer" value="${i}">
+                    ${labels[i]}. ${opt}
+                </label>
+            `;
+        });
+
+        // Reset UI
+        const btn = document.getElementById("actionBtn");
+        btn.innerText = "Jawab";
+        btn.disabled = false;
+        btn.classList.remove("secondary-btn");
+        btn.classList.add("primary-btn");
+
+        const feedback = document.getElementById("feedbackMsg");
+        feedback.style.display = "none";
+        feedback.innerText = "";
+
+        document.getElementById("aiThinking").classList.remove("show");
+
+        // Start AI thinking
+        scheduleAiAnswer();
+    }
+
+    // ===== AI ENGINE =====
+    function scheduleAiAnswer() {
+        const delay = ai.minDelay + Math.random() * (ai.maxDelay - ai.minDelay);
+
+        // Show thinking indicator after a short pause
+        setTimeout(() => {
+            if(!aiAnswered && !matchFinished) {
+                document.getElementById("aiThinking").classList.add("show");
+            }
+        }, 400);
+
+        aiTimeout = setTimeout(() => {
+            if(matchFinished) return;
+            aiAnswered = true;
+            document.getElementById("aiThinking").classList.remove("show");
+
+            const q = questions[currentQ];
+            const isCorrect = Math.random() < ai.accuracy;
+
+            let aiAnswer;
+            if(isCorrect) {
+                aiAnswer = q.answer;
+            } else {
+                // Pick a wrong answer
+                const wrongOptions = [0,1,2,3].filter(i => i !== q.answer);
+                aiAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+            }
+
+            if(isCorrect) {
+                aiScore++;
+                document.getElementById("oppScore").innerText = aiScore;
+            }
+
+            // Store AI answer for this question
+            const existing = playerAnswers.find(a => a.qIndex === currentQ);
+            if(existing) {
+                existing.aiAnswer = aiAnswer;
+                existing.aiCorrect = isCorrect;
+            } else {
+                playerAnswers.push({
+                    qIndex: currentQ, playerAnswer: -1, aiAnswer, correct: false, aiCorrect: isCorrect
+                });
+            }
+
+            // If player already answered, advance
+            if(answered) {
+                setTimeout(() => showQuestion(currentQ + 1), 1200);
+            }
+        }, delay);
+    }
+
+    // ===== PLAYER ANSWER =====
+    function handleAnswer() {
+        if(answered || matchFinished) return;
+
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if(!selected) {
+            if(typeof showCustomAlert === 'function') showCustomAlert("Pilih jawaban terlebih dahulu!", "error");
+            return;
+        }
+
+        answered = true;
+        const ansIdx = parseInt(selected.value);
+        const q = questions[currentQ];
+        const isCorrect = ansIdx === q.answer;
+
+        // Visual feedback
+        document.querySelectorAll(".option-label").forEach(lbl => {
+            lbl.style.pointerEvents = "none";
+        });
+
+        const selectedLbl = document.getElementById(`lbl_${ansIdx}`);
+        const correctLbl = document.getElementById(`lbl_${q.answer}`);
+
+        if(isCorrect) {
+            selectedLbl.classList.add("correct-answer");
+            myScore++;
+            document.getElementById("myScore").innerText = myScore;
+        } else {
+            selectedLbl.classList.add("wrong-answer");
+            correctLbl.classList.add("correct-answer");
+        }
+
+        // Feedback
+        const feedback = document.getElementById("feedbackMsg");
+        feedback.style.display = "block";
+        feedback.innerText = isCorrect ? "✅ Benar!" : `❌ Salah! Jawaban: ${['A','B','C','D'][q.answer]}`;
+        feedback.style.color = isCorrect ? "var(--success)" : "#ef4444";
+
+        // Button
+        const btn = document.getElementById("actionBtn");
+        btn.innerText = "Menunggu AI...";
+        btn.disabled = true;
+
+        // Store answer
+        const existing = playerAnswers.find(a => a.qIndex === currentQ);
+        if(existing) {
+            existing.playerAnswer = ansIdx;
+            existing.correct = isCorrect;
+        } else {
+            playerAnswers.push({
+                qIndex: currentQ, playerAnswer: ansIdx, aiAnswer: -1, correct: isCorrect, aiCorrect: false
+            });
+        }
+
+        // If AI already answered, advance
+        if(aiAnswered) {
+            setTimeout(() => showQuestion(currentQ + 1), 1200);
+        }
+    }
+
+    // ===== FINISH =====
+    function finishMatch() {
+        if(matchFinished) return;
+        matchFinished = true;
+
+        clearInterval(timerInterval);
+        clearTimeout(aiTimeout);
+
+        const isWin = myScore > aiScore;
+        const isDraw = myScore === aiScore;
+        const accuracy = (myScore / questions.length) * 100;
+
+        // Save results for battle-result page
+        localStorage.setItem("battleScore", myScore);
+        localStorage.setItem("battleTotal", questions.length);
+        localStorage.setItem("battleAccuracy", accuracy);
+        localStorage.setItem("battleTime", timeInSeconds);
+        localStorage.setItem("battleOppScore", aiScore);
+        localStorage.setItem("isWin", isDraw ? "null" : isWin ? "true" : "false");
+        localStorage.setItem("eloChange", "0");
+        localStorage.setItem("newElo", "0");
+        localStorage.setItem("gameMode", "ai");
+
+        // Store review data
+        const reviewData = playerAnswers.map((a, i) => {
+            const q = questions[a.qIndex];
+            return {
+                question: q.q,
+                options: q.options,
+                correctAnswer: q.answer,
+                playerAnswer: a.playerAnswer,
+                aiAnswer: a.aiAnswer,
+                playerCorrect: a.correct,
+                aiCorrect: a.aiCorrect
+            };
+        });
+        localStorage.setItem("aiReviewData", JSON.stringify(reviewData));
+
+        if(typeof navigateWithTransition === 'function') {
+            navigateWithTransition("battle-result.html");
+        } else {
+            window.location.href = "battle-result.html";
+        }
+    }
+
+    function confirmExit() {
+        if(typeof showCustomConfirm === 'function') {
+            showCustomConfirm("Yakin ingin keluar? Pertandingan ini akan dibatalkan.", () => {
+                matchFinished = true;
+                clearInterval(timerInterval);
+                clearTimeout(aiTimeout);
+                navigateWithTransition("index.html?view=main#ranked");
+            });
+        } else {
+            if(confirm("Yakin keluar?")) window.location.href = "index.html?view=main#ranked";
+        }
+    }
+
+    // ===== START =====
+    document.addEventListener("DOMContentLoaded", initBattle);
+  </script>
+</body>
+</html>

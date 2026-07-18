@@ -1,0 +1,11 @@
+{
+  "name": "edurank",
+  "private": true,
+  "workspaces": ["server"],
+  "scripts": {
+    "start": "npm --prefix server start"
+  },
+  "engines": {
+    "node": ">=20.17.0"
+  }
+}

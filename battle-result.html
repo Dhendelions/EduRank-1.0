@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle Result - EduRank</title>
+  <script>
+      document.documentElement.classList.add(localStorage.getItem("theme") === "light" ? "light" : "dark");
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .result-section {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 5%;
+        background: var(--bg);
+    }
+    :root.dark .result-section { background: var(--bg); }
+    .result-card {
+        background: var(--surface-glass);
+        padding: 40px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+    }
+    :root.dark .result-card,
+    body.dark .result-card { background: var(--surface-glass); }
+    .result-status {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    .status-win { color: var(--success); }
+    .status-lose { color: #ef4444; }
+    
+    .elo-gain {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 30px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    .stat-box {
+        background: var(--surface-2);
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+    }
+    :root.dark .stat-box,
+    body.dark .stat-box { background: var(--surface-2); }
+    .stat-box h3 {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    .review-answer-card {
+        padding: 16px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        text-align: left;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.055);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.16);
+    }
+    .review-answer-card.correct {
+        border-color: rgba(16,185,129,0.38);
+        background: rgba(16,185,129,0.12);
+    }
+    .review-answer-card.wrong {
+        border-color: rgba(239,68,68,0.38);
+        background: rgba(239,68,68,0.12);
+    }
+    .review-answer-card p,
+    .review-answer-card span {
+        color: var(--text);
+    }
+    .review-answer-card .answer-key {
+        color: #86efac;
+    }
+    .stat-box p {
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    .action-buttons button {
+        flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="result-section">
+    <div class="result-card">
+        <div class="result-status" id="resStatus">VICTORY!</div>
+        <div class="elo-gain" id="resPts">+45 Pts | +120 ELO</div>
+        
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3 id="resCorrect">4/5</h3>
+                <p>Benar</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="resAccuracy">80%</h3>
+                <p>Akurasi</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="resTime">03:12</h3>
+                <p>Waktu</p>
+            </div>
+        </div>
+        
+        <div id="reviewList" style="margin-bottom: 30px; max-height: 300px; overflow-y: auto;">
+            
+        </div>
+        
+        <div class="action-buttons">
+            <button class="secondary-btn" onclick="navigateWithTransition('index.html?view=main#home')">Kembali ke Home</button>
+            <button class="primary-btn" id="playAgainBtn" onclick="navigateWithTransition('battle.html')">Main Lagi</button>
+        </div>
+    </div>
+  </main>
+
+  <script src="interaksi.js"></script>
+  <script>
+    const score = Number.parseInt(localStorage.getItem('battleScoreCount') || localStorage.getItem('battleScore') || '0', 10);
+    const totalQ = Number.parseInt(localStorage.getItem('battleTotal') || '5', 10);
+    const oppScore = Number.parseInt(localStorage.getItem('battleOppScoreCount') || localStorage.getItem('battleOppScore') || '0', 10);
+    const accuracy = Number.parseFloat(localStorage.getItem('battleAccuracy') || '0');
+    const timeTaken = Number.parseInt(localStorage.getItem('battleTime') || '0', 10);
+    const gameMode = localStorage.getItem('gameMode') || 'ranked';
+    
+    const rawResult = localStorage.getItem('isWin');
+    const isWin = rawResult === 'true';
+    const isDraw = rawResult === 'null';
+    const eloChange = Number.parseInt(localStorage.getItem('eloChange') || '0', 10);
+    
+    const statusEl = document.getElementById('resStatus');
+    if(!statusEl) {
+      throw new Error('Result container is missing');
+    }
+
+    if(isWin) {
+        statusEl.innerText = "VICTORY!";
+        statusEl.className = "result-status status-win";
+    } else if (!isWin && !isDraw) {
+        statusEl.innerText = "DEFEAT!";
+        statusEl.className = "result-status status-lose";
+    } else {
+        statusEl.innerText = "DRAW!";
+        statusEl.className = "result-status";
+        statusEl.style.color = "var(--warning)";
+    }
+    
+    if(gameMode === 'ai') {
+        document.getElementById('resPts').innerText = `Kamu: ${score} | EduBot: ${oppScore} (VS Computer)`;
+        document.getElementById('playAgainBtn').setAttribute("onclick", "navigateWithTransition('battle-ai.html')");
+    } else if(gameMode === 'ranked') {
+        document.getElementById('resPts').innerText = `+${score*10} Pts | ${eloChange >= 0 ? '+' : ''}${eloChange} ELO (Ranked)`;
+    } else {
+        document.getElementById('resPts').innerText = `+${score*10} Pts | ${eloChange >= 0 ? '+' : ''}${eloChange} ELO (Casual)`;
+    }
+
+    document.getElementById('resCorrect').innerText = `${score}/${totalQ}`;
+    document.getElementById('resAccuracy').innerText = `${Math.round(accuracy)}%`;
+    
+    let m = Math.floor(timeTaken / 60);
+    let s = timeTaken % 60;
+    m = m < 10 ? '0' + m : m;
+    s = s < 10 ? '0' + s : s;
+    document.getElementById('resTime').innerText = `${m}:${s}`;
+    
+    // Review section
+    const reviewList = document.getElementById('reviewList');
+    if(reviewList) {
+        if(gameMode === 'ai') {
+            try {
+                const reviewData = JSON.parse(localStorage.getItem('aiReviewData') || '[]');
+                const labels = ['A','B','C','D'];
+                if(reviewData.length > 0) {
+                    reviewList.innerHTML = '<h4 style="margin-bottom:12px;">📋 Review Jawaban</h4>' + reviewData.map((r, i) => {
+                        const pCorrect = r.playerCorrect;
+                        return `
+                        <div class="review-answer-card ${pCorrect ? 'correct' : 'wrong'}">
+                            <p style="font-weight:600; margin-bottom:6px;">Soal ${i+1}: ${r.question}</p>
+                            <span>Jawabanmu: <strong>${r.playerAnswer >= 0 ? labels[r.playerAnswer] + '. ' + r.options[r.playerAnswer] : 'Tidak dijawab'}</strong> ${pCorrect ? '✅' : '❌'}</span><br>
+                            <span>EduBot: <strong>${r.aiAnswer >= 0 ? labels[r.aiAnswer] + '. ' + r.options[r.aiAnswer] : '-'}</strong> ${r.aiCorrect ? '✅' : '❌'}</span><br>
+                            <span class="answer-key">Kunci: <strong>${labels[r.correctAnswer]}. ${r.options[r.correctAnswer]}</strong></span>
+                        </div>`;
+                    }).join('');
+                } else {
+                    reviewList.innerHTML = '<p style="text-align:center; padding:20px;">Tidak ada data review.</p>';
+                }
+            } catch(e) {
+                reviewList.innerHTML = '<p style="text-align:center; padding:20px;">Gagal memuat review.</p>';
+            }
+        } else {
+            reviewList.innerHTML = '<p style="text-align:center; padding: 20px;">Review jawaban detail dinonaktifkan di mode online.</p>';
+        }
+    }
+    
+  </script>
+</body>
+</html>
