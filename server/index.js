@@ -147,9 +147,10 @@ app.post('/api/register', async (req, res) => {
         });
 
         const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
+        const safeBirthDate = birthDate ? String(birthDate).slice(0, 10) : null;
         
-        db.run(`INSERT INTO users (name, username, email, password, birth_date, student_photo, student_card_photo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [trimmedName, '-', trimmedEmail, hashedPassword, birthDate, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl], function(err) {
+        db.run(`INSERT INTO users (username, email, password, nama, tanggal_lahir, foto, role, bio, avatar, student_photo, student_card_photo, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [trimmedEmail.split('@')[0].slice(0, 50), trimmedEmail, hashedPassword, trimmedName, safeBirthDate, saveInfo.studentPhotoUrl, 'siswa', null, null, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl, 'Offline'], function(err) {
                 if (err) {
                     console.error("Register DB error code:", err.code, "message:", err.message);
                     if (err.code === 'ER_DUP_ENTRY' || String(err.message).includes('UNIQUE') || String(err.message).includes('duplicate')) {
@@ -166,7 +167,7 @@ app.post('/api/register', async (req, res) => {
                         id: this.lastID,
                         name: trimmedName,
                         email: trimmedEmail,
-                        username: '-'
+                        username: trimmedEmail.split('@')[0].slice(0, 50)
                     }
                 });
             });
@@ -220,7 +221,7 @@ app.post('/api/login', (req, res) => {
 
 // 3. Get Profile
 app.get('/api/profile', authenticateToken, (req, res) => {
-    db.get(`SELECT id, name, username, email, bio, country, province, city, class_level, school, avatar, exp, matches, wins, elo_matematika, elo_fisika, elo_bahasainggris, elo_informatika, highest_matematika, highest_fisika, highest_bahasainggris, highest_informatika, student_photo, student_card_photo, banned FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+    db.get(`SELECT id, username, email, nama AS name, bio, country, province, city, class_level, school, avatar, exp, matches, wins, elo_matematika, elo_fisika, elo_bahasainggris, elo_informatika, highest_matematika, highest_fisika, highest_bahasainggris, highest_informatika, foto, student_photo, student_card_photo, banned, role, tanggal_lahir, rank_points, status FROM users WHERE id = ?`, [req.user.id], (err, user) => {
         if (err || !user) return res.status(404).json({ error: "User not found" });
         res.json(user);
     });
@@ -247,8 +248,8 @@ app.put('/api/profile', authenticateToken, (req, res) => {
         return res.status(400).json({ error: "Avatar must be an image upload." });
     }
 
-    db.run(`UPDATE users SET name = ?, bio = ?, avatar = ? WHERE id = ?`,
-        [profile.name, profile.bio, profile.avatar, req.user.id], function(err) {
+    db.run(`UPDATE users SET nama = ?, bio = ?, avatar = ?, foto = COALESCE(?, foto) WHERE id = ?`,
+        [profile.name, profile.bio, profile.avatar || null, profile.avatar || null, req.user.id], function(err) {
             if (err) return res.status(400).json({ error: "Update failed." });
             res.json({ message: "Profile updated" });
         });
@@ -326,7 +327,7 @@ app.get('/api/leaderboard', (req, res) => {
 
 // 1. Get all players
 app.get('/api/admin/users', requireAdmin, (req, res) => {
-    db.all(`SELECT * FROM users`, [], (err, rows) => {
+    db.all(`SELECT id, username, email, nama AS name, password, rank_points, created_at, tanggal_lahir, foto, role, last_login, updated_at, bio, status, avatar, exp, elo_matematika, elo_fisika, elo_informatika, elo_bahasainggris, highest_matematika, highest_fisika, highest_informatika, highest_bahasainggris, matches, wins, country, city, province, class_level, school, banned, student_photo, student_card_photo FROM users`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: "Database error" });
         res.json(rows);
     });
@@ -337,7 +338,7 @@ app.post('/api/admin/update-profile', requireAdmin, (req, res) => {
     const { id, username, province, city, school, class_level } = req.body || {};
     if (!id) return res.status(400).json({ error: "User ID is required." });
 
-    db.run(`UPDATE users SET username = ?, province = ?, city = ?, school = ?, class_level = ? WHERE id = ?`,
+    db.run(`UPDATE users SET username = ?, province = ?, city = ?, school = ?, class_level = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [
             String(username || '-').trim(), 
             String(province || '-').trim(), 
@@ -358,7 +359,7 @@ app.post('/api/admin/ban', requireAdmin, (req, res) => {
     const { id, banned } = req.body || {};
     if (!id) return res.status(400).json({ error: "User ID is required." });
 
-    db.run(`UPDATE users SET banned = ? WHERE id = ?`, [Number(banned) ? 1 : 0, Number(id)], function(err) {
+    db.run(`UPDATE users SET banned = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [Number(banned) ? 1 : 0, Number(banned) ? 'Banned' : 'Offline', Number(id)], function(err) {
         if (err) return res.status(400).json({ error: "Failed to update ban status." });
         res.json({ message: banned ? "User has been banned." : "User has been unbanned." });
     });

@@ -11,7 +11,7 @@
             "port": 3306,
             "driver": "MySQL",
             "name": "Edu PVP",
-            "database": "edu_pvp",
+            "database": "railway",
             "username": "root",
             "password": "Crissencio101208!",
             "connectionTimeout": 30

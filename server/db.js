@@ -50,7 +50,7 @@ const pool = mysql.createPool({
     host: resolvedHost || 'localhost',
     user: resolvedUser || 'root',
     password: resolvedPassword || '',
-    database: resolvedDatabase || 'edurank',
+    database: resolvedDatabase || 'railway',
     port: parsePort(resolvedPort, 3306),
     multipleStatements: false,
     waitForConnections: true,
@@ -70,7 +70,7 @@ pool.getConnection((err, connection) => {
         console.error(`[MYSQL-ERROR] Config snapshot host=${resolvedHost || 'MISSING'} user=${resolvedUser ? 'SET' : 'MISSING'} db=${resolvedDatabase || 'MISSING'} port=${resolvedPort || '3306'}`);
         console.error('Silakan pastikan:');
         console.error('1. Server MySQL Anda sudah berjalan (running)');
-        console.error('2. Database "edurank" sudah dibuat (CREATE DATABASE edurank;)');
+        console.error('2. Database "railway" sudah dibuat dan `DB_NAME=railway` sudah diset');
         console.error('3. Kredensial di file server/.env sudah sesuai');
         console.error('================================================================\n');
         return;
@@ -84,32 +84,39 @@ function initDb() {
     const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            username VARCHAR(255) DEFAULT '-',
-            email VARCHAR(255) UNIQUE NOT NULL,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            email VARCHAR(100) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
-            bio TEXT,
-            country VARCHAR(255) DEFAULT 'Indonesia',
-            province VARCHAR(255) DEFAULT '-',
-            city VARCHAR(255) DEFAULT '-',
-            class_level VARCHAR(255) DEFAULT '-',
-            school VARCHAR(255) DEFAULT '-',
-            avatar LONGTEXT,
+            rank_points INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            nama VARCHAR(100) DEFAULT NULL,
+            tanggal_lahir DATE DEFAULT NULL,
+            foto VARCHAR(255) DEFAULT NULL,
+            role VARCHAR(20) DEFAULT 'siswa',
+            last_login TIMESTAMP NULL DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            bio VARCHAR(255) DEFAULT NULL,
+            status VARCHAR(50) DEFAULT 'Offline',
+            avatar VARCHAR(255) DEFAULT NULL,
             exp INT DEFAULT 0,
+            elo_matematika INT DEFAULT 0,
+            elo_fisika INT DEFAULT 0,
+            elo_informatika INT DEFAULT 0,
+            elo_bahasainggris INT DEFAULT 0,
+            highest_matematika INT DEFAULT 0,
+            highest_fisika INT DEFAULT 0,
+            highest_informatika INT DEFAULT 0,
+            highest_bahasainggris INT DEFAULT 0,
             matches INT DEFAULT 0,
             wins INT DEFAULT 0,
-            elo_matematika INT DEFAULT 420,
-            elo_fisika INT DEFAULT 228,
-            elo_bahasainggris INT DEFAULT 170,
-            elo_informatika INT DEFAULT 760,
-            highest_matematika VARCHAR(255) DEFAULT 'Bronze III',
-            highest_fisika VARCHAR(255) DEFAULT 'Bronze I',
-            highest_bahasainggris VARCHAR(255) DEFAULT 'Bronze I',
-            highest_informatika VARCHAR(255) DEFAULT 'Epic IV',
-            birth_date VARCHAR(255) DEFAULT '-',
-            student_photo VARCHAR(255) DEFAULT '-',
-            student_card_photo VARCHAR(255) DEFAULT '-',
-            banned TINYINT DEFAULT 0
+            country VARCHAR(100) DEFAULT NULL,
+            city VARCHAR(100) DEFAULT NULL,
+            province VARCHAR(100) DEFAULT NULL,
+            class_level VARCHAR(50) DEFAULT NULL,
+            school VARCHAR(100) DEFAULT NULL,
+            banned TINYINT(1) DEFAULT 0,
+            student_photo VARCHAR(255) DEFAULT NULL,
+            student_card_photo VARCHAR(255) DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `;
 
