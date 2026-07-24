@@ -2621,12 +2621,12 @@ function handleRegisterSubmit(event){
             studentPhoto: studentPhotoBase64, 
             studentCardPhoto: studentCardPhotoBase64 
         })
-    })
     .then(res => res.json())
     .then(data => {
         if(data.error) {
             showCustomAlert(data.error, "error");
         } else {
+            localStorage.setItem("edurank_token", data.token);
             saveAuthUser({
                 name,
                 email,

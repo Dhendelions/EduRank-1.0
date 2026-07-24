@@ -13,26 +13,33 @@ const { isRateLimited, cleanupSocket, registerSession, validateAnswerTiming, val
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = String(process.env.CLIENT_ORIGIN || process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 const io = new Server(server, {
     cors: {
-        origin: "*", // allow all for prototype
+        origin: allowedOrigins.length > 0 ? allowedOrigins : true,
         methods: ["GET", "POST"]
     }
 });
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true
+}));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, '..')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const JWT_SECRET = process.env.JWT_SECRET || (
     process.env.NODE_ENV === 'production'
-        ? crypto.randomBytes(48).toString('hex')
+        ? null
         : 'dev-secret-change-me'
 );
 
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    console.warn('JWT_SECRET is not configured; generated a temporary secret for this server process.');
+if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+    throw new Error('JWT_SECRET must be configured in production.');
 }
 
 function resolveServerConfig(overrides = {}) {
@@ -66,6 +73,19 @@ const authenticateToken = (req, res, next) => {
             req.user = user;
             next();
         });
+    });
+};
+
+const requireAdmin = (req, res, next) => {
+    authenticateToken(req, res, () => {
+        const adminIds = String(process.env.ADMIN_USER_IDS || '')
+            .split(',')
+            .map((id) => Number(id.trim()))
+            .filter(Number.isInteger);
+        if (!adminIds.includes(Number(req.user.id))) {
+            return res.sendStatus(403);
+        }
+        next();
     });
 };
 
@@ -122,9 +142,23 @@ app.post('/api/register', async (req, res) => {
         db.run(`INSERT INTO users (name, username, email, password, birth_date, student_photo, student_card_photo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [trimmedName, '-', trimmedEmail, hashedPassword, birthDate, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl], function(err) {
                 if (err) {
-                    return res.status(400).json({ error: "Email already registered." });
+                    if (err.code === 'ER_DUP_ENTRY' || String(err.message).includes('UNIQUE') || String(err.message).includes('duplicate')) {
+                        return res.status(400).json({ error: "Email sudah terdaftar." });
+                    }
+                    console.error("Register DB error:", err);
+                    return res.status(500).json({ error: "Gagal menyimpan ke database: " + err.message });
                 }
-                res.json({ message: "Registration successful" });
+                const token = jwt.sign({ id: this.lastID, email: trimmedEmail }, JWT_SECRET, { expiresIn: '7d' });
+                res.json({ 
+                    message: "Registration successful", 
+                    token, 
+                    user: {
+                        id: this.lastID,
+                        name: trimmedName,
+                        email: trimmedEmail,
+                        username: '-'
+                    }
+                });
             });
     } catch (e) {
         console.error("Register error:", e);
@@ -272,7 +306,7 @@ app.get('/api/leaderboard', (req, res) => {
 // --- DEVELOPER ADMIN API ---
 
 // 1. Get all players
-app.get('/api/admin/users', (req, res) => {
+app.get('/api/admin/users', requireAdmin, (req, res) => {
     db.all(`SELECT * FROM users`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: "Database error" });
         res.json(rows);
@@ -280,7 +314,7 @@ app.get('/api/admin/users', (req, res) => {
 });
 
 // 2. Assign nickname & location credentials
-app.post('/api/admin/update-profile', (req, res) => {
+app.post('/api/admin/update-profile', requireAdmin, (req, res) => {
     const { id, username, province, city, school, class_level } = req.body || {};
     if (!id) return res.status(400).json({ error: "User ID is required." });
 
@@ -301,7 +335,7 @@ app.post('/api/admin/update-profile', (req, res) => {
 });
 
 // 3. Ban / Unban player
-app.post('/api/admin/ban', (req, res) => {
+app.post('/api/admin/ban', requireAdmin, (req, res) => {
     const { id, banned } = req.body || {};
     if (!id) return res.status(400).json({ error: "User ID is required." });
 
@@ -312,7 +346,7 @@ app.post('/api/admin/ban', (req, res) => {
 });
 
 // 4. Delete player account
-app.delete('/api/admin/users/:id', (req, res) => {
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
     const userId = Number(req.params.id);
     if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID." });
 
@@ -723,14 +757,7 @@ function updatePlayerStats(userId, subject, isWin, newElo, score) {
 }
 
 // --- ADMIN: Anti-Cheat Log Endpoint ---
-app.get('/api/admin/cheat-log', authenticateToken, (req, res) => {
-    const adminIds = String(process.env.ADMIN_USER_IDS || '')
-        .split(',')
-        .map((id) => Number(id.trim()))
-        .filter(Number.isInteger);
-    if (!adminIds.includes(Number(req.user.id))) {
-        return res.sendStatus(403);
-    }
+app.get('/api/admin/cheat-log', requireAdmin, (req, res) => {
     res.json(getCheatLog());
 });
 

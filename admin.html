@@ -359,12 +359,36 @@
         }
     }
 
+    function getAdminAuthHeaders(extraHeaders = {}) {
+        const token = localStorage.getItem("edurank_token");
+        if (!token) {
+            throw new Error("Sesi login admin tidak ditemukan. Silakan login kembali.");
+        }
+        return {
+            ...extraHeaders,
+            "Authorization": "Bearer " + token
+        };
+    }
+
+    function handleAdminAuthFailure(res) {
+        if (res && (res.status === 401 || res.status === 403)) {
+            localStorage.removeItem("edurank_token");
+            alert("Akses admin ditolak. Silakan login ulang dengan akun admin.");
+            window.location.href = "index.html";
+            return true;
+        }
+        return false;
+    }
+
     async function fetchPlayers() {
         const container = document.getElementById("playersList");
         container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-light);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem;"></i><br/><br/>Memuat data pemain...</div>`;
         
         try {
-            const res = await fetch(getApiUrl('/api/admin/users'));
+            const res = await fetch(getApiUrl('/api/admin/users'), {
+                headers: getAdminAuthHeaders()
+            });
+            if (handleAdminAuthFailure(res)) return;
             if (!res.ok) throw new Error("API call failed");
             const players = await res.json();
             
@@ -476,9 +500,10 @@
         try {
             const res = await fetch(getApiUrl('/api/admin/update-profile'), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ id, username, province, city, school, class_level })
             });
+            if (handleAdminAuthFailure(res)) return;
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Gagal update detail");
             
@@ -495,9 +520,10 @@
         try {
             const res = await fetch(getApiUrl('/api/admin/ban'), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ id, banned: bannedState })
             });
+            if (handleAdminAuthFailure(res)) return;
             if (!res.ok) throw new Error("Gagal merubah status ban");
             
             showToast(bannedState ? "Akun berhasil dibanned!" : "Akun berhasil diaktifkan kembali!", "success");
@@ -512,8 +538,10 @@
 
         try {
             const res = await fetch(getApiUrl(`/api/admin/users/${id}`), {
-                method: "DELETE"
+                method: "DELETE",
+                headers: getAdminAuthHeaders()
             });
+            if (handleAdminAuthFailure(res)) return;
             if (!res.ok) throw new Error("Gagal menghapus akun");
             
             showToast("Akun player telah dihapus secara permanen!", "success");

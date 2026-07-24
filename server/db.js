@@ -1,15 +1,32 @@
 const mysql = require('mysql2');
 const path = require('path');
 
-// Load environment variables
+// Load environment variables from the server folder first, then fall back to the project root.
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+
+function parsePort(value, fallback) {
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+const resolvedHost = process.env.DB_HOST || process.env.MYSQLHOST || process.env.RAILWAY_MYSQL_HOST;
+const resolvedUser = process.env.DB_USER || process.env.MYSQLUSER || process.env.RAILWAY_MYSQL_USER;
+const resolvedPassword = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || process.env.RAILWAY_MYSQL_PASSWORD;
+const resolvedDatabase = process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.RAILWAY_MYSQL_DATABASE;
+const resolvedPort = process.env.DB_PORT || process.env.MYSQLPORT || process.env.RAILWAY_MYSQL_PORT;
+
+if (process.env.NODE_ENV === 'production' && (!resolvedHost || !resolvedUser || !resolvedDatabase)) {
+    throw new Error('MySQL environment variables are required in production (DB_HOST/DB_USER/DB_PASSWORD/DB_NAME or Railway MySQL equivalents).');
+}
 
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'edurank',
-    multipleStatements: true,
+    host: resolvedHost || 'localhost',
+    user: resolvedUser || 'root',
+    password: resolvedPassword || '',
+    database: resolvedDatabase || 'edurank',
+    port: parsePort(resolvedPort, 3306),
+    multipleStatements: false,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -76,6 +93,29 @@ function initDb() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `;
 
+    const createMatchHistoryTable = `
+        CREATE TABLE IF NOT EXISTS match_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            opponent_name VARCHAR(255) NOT NULL,
+            subject VARCHAR(100) NOT NULL,
+            mode VARCHAR(50) NOT NULL,
+            is_win TINYINT NOT NULL,
+            elo_change INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `;
+
+    const createFriendsTable = `
+        CREATE TABLE IF NOT EXISTS friends (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            friend_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY user_friend_unique (user_id, friend_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `;
+
     pool.query(createUsersTable, (err) => {
         if (err) {
             console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel users:', err.message);
@@ -89,6 +129,22 @@ function initDb() {
             console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel feedback:', err.message);
         } else {
             console.log('[MYSQL] Tabel "feedback" terverifikasi/dibuat.');
+        }
+    });
+
+    pool.query(createMatchHistoryTable, (err) => {
+        if (err) {
+            console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel match_history:', err.message);
+        } else {
+            console.log('[MYSQL] Tabel "match_history" terverifikasi/dibuat.');
+        }
+    });
+
+    pool.query(createFriendsTable, (err) => {
+        if (err) {
+            console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel friends:', err.message);
+        } else {
+            console.log('[MYSQL] Tabel "friends" terverifikasi/dibuat.');
         }
     });
 }
