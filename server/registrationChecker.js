@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 function validateRegistration({ name, email, password, birthDate, studentPhoto, studentCardPhoto }) {
     // 1. Validate full name
@@ -76,11 +77,29 @@ function validateRegistration({ name, email, password, birthDate, studentPhoto, 
 }
 
 function saveRegistration({ name, email, birthDate, studentPhoto, studentCardPhoto }) {
-    // Ensure uploads directory exists in root
+    // Try the project uploads folder first, then fall back to a temp directory.
     const rootDir = path.resolve(__dirname, '..');
-    const uploadsDir = path.join(rootDir, 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+    const candidateDirs = [
+        path.join(rootDir, 'uploads'),
+        path.join(os.tmpdir(), 'edurank-uploads')
+    ];
+
+    let uploadsDir = null;
+    for (const dir of candidateDirs) {
+        try {
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.accessSync(dir, fs.constants.W_OK);
+            uploadsDir = dir;
+            break;
+        } catch (error) {
+            // Try the next fallback directory.
+        }
+    }
+
+    if (!uploadsDir) {
+        throw new Error('No writable uploads directory available for registration images.');
     }
 
     // Save student photo image

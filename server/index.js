@@ -182,14 +182,22 @@ app.post('/api/login', (req, res) => {
     const trimmedEmail = String(email || '').trim().toLowerCase();
     const trimmedPassword = String(password || '');
 
-    if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.') || trimmedPassword.length < 8 || trimmedEmail === 'google.user@edurank.local') {
-        return res.status(400).json({ error: "Invalid credentials" });
+    if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+        return res.status(400).json({ error: "Format email tidak valid." });
+    }
+
+    if (trimmedPassword.length < 8) {
+        return res.status(400).json({ error: "Password minimal 8 karakter." });
+    }
+
+    if (trimmedEmail === 'google.user@edurank.local') {
+        return res.status(400).json({ error: "Gunakan metode login yang sesuai." });
     }
 
     db.get(`SELECT * FROM users WHERE email = ?`, [trimmedEmail], async (err, user) => {
         if (err || !user) {
             if (err) console.error("Login DB error:", err);
-            return res.status(400).json({ error: "Invalid credentials" });
+            return res.status(404).json({ error: "Akun belum terdaftar." });
         }
         
         // Check if user is banned
@@ -199,7 +207,7 @@ app.post('/api/login', (req, res) => {
         
         const validPassword = await bcrypt.compare(trimmedPassword, user.password);
         if (!validPassword) {
-            return res.status(400).json({ error: "Invalid credentials" });
+            return res.status(400).json({ error: "Password salah." });
         }
         
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
