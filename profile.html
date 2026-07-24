@@ -110,7 +110,7 @@
               </div>
             </div>
           </div>
-          <button class="primary-btn" onclick="openEditProfileModal()">
+          <button class="primary-btn" type="button" onclick="openEditProfileModal()">
             <i class="fa-solid fa-pen-to-square"></i> Edit Profile
           </button>
         </div>
@@ -189,7 +189,7 @@
     <div class="game-modal edit-profile-modal">
       <div class="modal-header">
         <h3>Edit Profile</h3>
-        <button class="modal-close" onclick="closeEditProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" type="button" onclick="closeEditProfileModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form class="edit-profile-form" id="editProfileForm">
         <div class="edit-avatar-row">
@@ -309,15 +309,25 @@
     }
 
     function openEditProfileModal() {
-      if(!currentProfileData) return;
-      document.getElementById("editName").value = currentProfileData.name || "";
-      document.getElementById("editUsername").value = currentProfileData.username || "";
-      document.getElementById("editEmail").value = currentProfileData.email || "";
-      document.getElementById("editBio").value = currentProfileData.bio || "";
-      document.getElementById("editCountry").value = currentProfileData.country || "";
-      document.getElementById("editClass").value = currentProfileData.class_level || "";
-      document.getElementById("editSchool").value = currentProfileData.school || "";
-      document.getElementById("editAvatarPreview").src = currentProfileData.avatar || "https://i.pravatar.cc/100?img=12";
+      const fallbackData = currentProfileData || {
+        name: document.getElementById("profileName")?.innerText || "",
+        username: (document.getElementById("profileUsername")?.innerText || "").replace(/^@/, ""),
+        email: "",
+        bio: document.getElementById("profileBio")?.innerText || "",
+        country: document.getElementById("profileCountry")?.innerText || "",
+        class_level: document.getElementById("profileClass")?.innerText || "",
+        school: document.getElementById("profileSchool")?.innerText || "",
+        avatar: document.getElementById("profileAvatar")?.src || "https://i.pravatar.cc/100?img=12"
+      };
+
+      document.getElementById("editName").value = fallbackData.name || "";
+      document.getElementById("editUsername").value = fallbackData.username || "";
+      document.getElementById("editEmail").value = fallbackData.email || "";
+      document.getElementById("editBio").value = fallbackData.bio || "";
+      document.getElementById("editCountry").value = fallbackData.country || "";
+      document.getElementById("editClass").value = fallbackData.class_level || "";
+      document.getElementById("editSchool").value = fallbackData.school || "";
+      document.getElementById("editAvatarPreview").src = fallbackData.avatar || "https://i.pravatar.cc/100?img=12";
       document.getElementById("editProfileOverlay").classList.add("show");
     }
 
