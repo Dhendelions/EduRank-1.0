@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,24 +9,19 @@
 
   <link rel="stylesheet" href="style.css" />
 
-  
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
 
-  
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
 
 <body class="dark auth-locked">
 
-  
-  
-  
+
+
+
 
   <section class="auth-gate" id="authGate" aria-label="Login dan daftar EduRank">
     <div class="auth-shell">
@@ -108,6 +104,14 @@
             </label>
           </div>
 
+          <div class="auth-warning-banner"
+            style="margin-top: 10px; margin-bottom: 20px; padding: 12px 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; font-size: 0.85rem; color: #f87171; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-top: 3px; font-size: 1rem; flex-shrink: 0;"></i>
+            <span><strong>Peringatan:</strong> Anda dapat mengunggah gambar apa saja untuk mendaftar, namun developer
+              akan memverifikasi kesesuaian gambar tersebut. Jika gambar tidak sesuai/palsu, akun Anda akan langsung
+              diblokir dan dihapus secara permanen!</span>
+          </div>
+
           <label class="auth-field">
             <span>Email</span>
             <div class="auth-input-wrap">
@@ -121,8 +125,10 @@
             <span>Password</span>
             <div class="auth-input-wrap">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="authRegisterPassword" autocomplete="new-password" placeholder="Minimal 8 karakter" />
-              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterPassword" aria-label="Tampilkan password">
+              <input type="password" id="authRegisterPassword" autocomplete="new-password"
+                placeholder="Minimal 8 karakter" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterPassword"
+                aria-label="Tampilkan password">
                 <i class="fa-regular fa-eye-slash"></i>
               </button>
             </div>
@@ -133,8 +139,10 @@
             <span>Konfirmasi Password</span>
             <div class="auth-input-wrap">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="authRegisterConfirm" autocomplete="new-password" placeholder="Ulangi password" />
-              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterConfirm" aria-label="Tampilkan konfirmasi password">
+              <input type="password" id="authRegisterConfirm" autocomplete="new-password"
+                placeholder="Ulangi password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authRegisterConfirm"
+                aria-label="Tampilkan konfirmasi password">
                 <i class="fa-regular fa-eye-slash"></i>
               </button>
             </div>
@@ -146,7 +154,8 @@
             <i class="fa-brands fa-google"></i>
             Daftar lewat Google (segera hadir)
           </button>
-          <p class="auth-switch-text">Sudah punya akun? <button type="button" data-auth-switch="login">Login</button></p>
+          <p class="auth-switch-text">Sudah punya akun? <button type="button" data-auth-switch="login">Login</button>
+          </p>
         </form>
 
         <form class="auth-form hidden" id="loginForm" novalidate>
@@ -163,8 +172,10 @@
             <span>Password</span>
             <div class="auth-input-wrap">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="authLoginPassword" autocomplete="current-password" placeholder="Masukkan password" />
-              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginPassword" aria-label="Tampilkan password login">
+              <input type="password" id="authLoginPassword" autocomplete="current-password"
+                placeholder="Masukkan password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginPassword"
+                aria-label="Tampilkan password login">
                 <i class="fa-regular fa-eye-slash"></i>
               </button>
             </div>
@@ -175,8 +186,10 @@
             <span>Konfirmasi Password</span>
             <div class="auth-input-wrap">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="authLoginConfirm" autocomplete="current-password" placeholder="Ulangi password" />
-              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginConfirm" aria-label="Tampilkan konfirmasi password login">
+              <input type="password" id="authLoginConfirm" autocomplete="current-password"
+                placeholder="Ulangi password" />
+              <button class="auth-eye-btn" type="button" data-password-toggle="authLoginConfirm"
+                aria-label="Tampilkan konfirmasi password login">
                 <i class="fa-regular fa-eye-slash"></i>
               </button>
             </div>
@@ -188,15 +201,16 @@
             <i class="fa-brands fa-google"></i>
             Login lewat Google (segera hadir)
           </button>
-          <p class="auth-switch-text">Belum punya akun? <button type="button" data-auth-switch="register">Daftar</button></p>
+          <p class="auth-switch-text">Belum punya akun? <button type="button"
+              data-auth-switch="register">Daftar</button></p>
         </form>
       </div>
     </div>
   </section>
 
-  
-  
-  
+
+
+
 
   <section class="learning-quiz hidden" id="learningQuiz" aria-label="Tes gaya belajar VAK">
     <div class="quiz-shell">
@@ -350,21 +364,21 @@
     </div>
   </section>
 
-  
-  
-  
+
+
+
 
   <header class="header">
 
     <nav class="navbar container">
 
-      
+
       <div class="nav-logo">
         <i class="fa-solid fa-graduation-cap"></i>
         <span>EduRank</span>
       </div>
 
-      
+
       <div class="nav-menu" id="navMenu">
 
         <a href="#home" class="nav-link active-link">
@@ -389,20 +403,16 @@
 
       </div>
 
-      
+
       <div class="nav-actions">
 
-        
+
         <div class="nav-search dropdown-container">
 
           <i class="fa-solid fa-magnifying-glass"></i>
 
-          <input
-            type="text"
-            placeholder="Cari materi..."
-            id="searchInput"
-          />
-          
+          <input type="text" placeholder="Cari materi..." id="searchInput" />
+
           <div class="dropdown-menu" id="searchDropdown">
             <a href="#" class="dropdown-item">Materi Matematika SMA</a>
             <a href="#" class="dropdown-item">Materi Fisika Kelas 10</a>
@@ -411,12 +421,12 @@
 
         </div>
 
-        
+
         <button class="nav-icon-btn" id="darkModeBtn" onclick="toggleDarkMode()">
           <i class="fa-solid fa-moon" id="darkModeIcon"></i>
         </button>
 
-        
+
         <div class="dropdown-container">
           <button class="nav-icon-btn" onclick="toggleDropdown('notifDropdown')">
 
@@ -425,25 +435,21 @@
             <span class="notif-dot"></span>
 
           </button>
-          
+
           <div class="dropdown-menu" id="notifDropdown" style="right: 0; min-width: 250px;">
-            <div class="dropdown-item"><strong>Admin</strong><br/>Selamat datang di EduRank!</div>
-            <div class="dropdown-item"><strong>Sistem</strong><br/>Ada event ranked baru besok.</div>
+            <div class="dropdown-item"><strong>Admin</strong><br />Selamat datang di EduRank!</div>
+            <div class="dropdown-item"><strong>Sistem</strong><br />Ada event ranked baru besok.</div>
           </div>
         </div>
 
-        
+
         <a href="profile.html" class="profile-btn" style="display:block;">
 
-          <img
-            src="https://i.pravatar.cc/100?img=12"
-            alt="Profile"
-            id="navProfileImg"
-          />
+          <img src="https://i.pravatar.cc/100?img=12" alt="Profile" id="navProfileImg" />
 
         </a>
 
-        
+
         <button class="nav-icon-btn hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
           <i class="fa-solid fa-bars"></i>
         </button>
@@ -454,22 +460,22 @@
 
   </header>
 
-  
-  
-  
+
+
+
 
   <main>
 
-    
-    
-    
+
+
+
 
     <section class="hero" id="home">
       <div class="hero-bg-pattern"></div>
 
       <div class="container hero-container">
 
-        
+
         <div class="hero-left">
 
           <div class="hero-badge">
@@ -501,7 +507,7 @@
 
         </div>
 
-        
+
         <div class="hero-right">
 
           <div class="rank-card">
@@ -510,7 +516,8 @@
 
               <h3 id="heroRankTitle">Matematika Rank</h3>
 
-              <button class="tier-badge diamond-badge rank-clickable" id="heroRankBadge" type="button"><i class="fa-solid fa-medal"></i> Bronze (0 ELO)</button>
+              <button class="tier-badge diamond-badge rank-clickable" id="heroRankBadge" type="button"><i
+                  class="fa-solid fa-medal"></i> Bronze (0 ELO)</button>
 
             </div>
 
@@ -519,8 +526,9 @@
               <div class="progress-fill" id="heroRankProgress" style="width: 0%;"></div>
 
             </div>
-            
-            <p style="text-align: right; font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-top: -20px; margin-bottom: 20px;" id="heroRankNext">0 ELO to Silver</p>
+
+            <p style="text-align: right; font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-top: -20px; margin-bottom: 20px;"
+              id="heroRankNext">0 ELO to Silver</p>
 
             <div class="subject-rank-tabs" id="subjectRankTabs"></div>
 
@@ -551,9 +559,9 @@
 
     </section>
 
-    
-    
-    
+
+
+
 
     <section class="subjects" id="materi">
 
@@ -571,7 +579,7 @@
 
         <div class="subject-grid">
 
-          
+
           <div class="subject-card disabled-card">
 
             <div class="soon-badge">
@@ -586,7 +594,7 @@
 
           </div>
 
-          
+
           <div class="subject-card disabled-card">
 
             <div class="soon-badge">
@@ -601,7 +609,7 @@
 
           </div>
 
-          
+
           <a href="sma.html" class="subject-card-link" style="display:block; text-decoration:none;">
             <div class="subject-card">
               <div class="subject-icon math">
@@ -619,10 +627,10 @@
       </div>
 
     </section>
-    
-    
-    
-    
+
+
+
+
 
     <section class="ranked-section" id="ranked">
 
@@ -640,7 +648,7 @@
 
         <div class="ranked-grid">
 
-          
+
           <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('ranked')">
             <div class="ranked-card">
               <div class="ranked-icon solo-icon">
@@ -653,7 +661,7 @@
             </div>
           </a>
 
-          
+
           <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('classic')">
             <div class="ranked-card">
               <div class="ranked-icon team-icon">
@@ -666,7 +674,7 @@
             </div>
           </a>
 
-          
+
           <a href="#" style="text-decoration: none; color: inherit;" onclick="openGameModal('custom')">
             <div class="ranked-card">
               <div class="ranked-icon friend-icon">
@@ -685,13 +693,13 @@
 
     </section>
 
-    
+
 
   </main>
 
-  
-  
-  
+
+
+
 
   <footer class="footer">
 
@@ -713,21 +721,22 @@
 
   </footer>
 
-  
+
   <div class="modal-overlay" id="gameModalOverlay">
     <div class="game-modal">
-        <div class="modal-header">
-            <h3 id="modalTitle">Pilih Mode</h3>
-            <button class="modal-close" onclick="closeGameModal()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="modal-options" id="modalOptions">
-            
-        </div>
+      <div class="modal-header">
+        <h3 id="modalTitle">Pilih Mode</h3>
+        <button class="modal-close" onclick="closeGameModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-options" id="modalOptions">
+
+      </div>
     </div>
   </div>
 
-  
+
   <script src="interaksi.js"></script>
 
 </body>
+
 </html>

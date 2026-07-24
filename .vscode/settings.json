@@ -1,0 +1,20 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "Edu PVP",
+            "database": "edu_pvp",
+            "username": "root",
+            "password": "Crissencio101208!",
+            "connectionTimeout": 30
+        }
+    ]
+}

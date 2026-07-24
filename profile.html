@@ -10,6 +10,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .verify-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 6px;
+      vertical-align: middle;
+      transition: all 0.4s ease;
+    }
+    .verify-badge.unverified {
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+    .verify-badge.verified {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .profile-sync-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34d399;
+      animation: pulse-anim 2s infinite;
+    }
+    @keyframes pulse-anim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -53,10 +97,16 @@
               <h1 id="profileName">Siswa Teladan</h1>
               <p id="profileUsername">@siswa</p>
               <p class="profile-bio" id="profileBio">Saya suka belajar hal baru.</p>
-              <div class="profile-meta-row">
+              <div class="profile-sync-indicator">
+                <span class="pulse-dot"></span>
+                <span>Data diperbarui otomatis dari database Developer</span>
+              </div>
+              <div class="profile-meta-row" style="flex-wrap: wrap; gap: 10px 20px;">
                 <span><i class="fa-solid fa-flag"></i> <span id="profileCountry">Indonesia</span></span>
-                <span><i class="fa-solid fa-school"></i> <span id="profileSchool">SMA Nusantara</span></span>
-                <span><i class="fa-solid fa-layer-group"></i> <span id="profileClass">Kelas 11</span></span>
+                <span><i class="fa-solid fa-map-location-dot"></i> Provinsi: <span id="profileProvince">-</span><span id="badgeProvince" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
+                <span><i class="fa-solid fa-city"></i> Kota: <span id="profileCity">-</span><span id="badgeCity" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
+                <span><i class="fa-solid fa-school"></i> Sekolah: <span id="profileSchool">-</span><span id="badgeSchool" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
+                <span><i class="fa-solid fa-layer-group"></i> Kelas: <span id="profileClass">-</span><span id="badgeClass" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
               </div>
             </div>
           </div>
@@ -148,12 +198,17 @@
           <input type="file" id="editAvatarInput" accept="image/*" hidden>
         </div>
         <div class="form-group"><label>Nama</label><input id="editName" required></div>
-        <div class="form-group"><label>Username</label><input id="editUsername" required></div>
-        <div class="form-group"><label>Email</label><input id="editEmail" type="email" required></div>
         <div class="form-group"><label>Bio</label><textarea id="editBio" rows="3"></textarea></div>
-        <div class="form-group"><label>Kewarganegaraan</label><input id="editCountry"></div>
-        <div class="form-group"><label>Kelas</label><input id="editClass"></div>
-        <div class="form-group"><label>Sekolah</label><input id="editSchool"></div>
+        <div style="border-top: 1px solid var(--border); margin: 15px 0; padding-top: 15px;">
+          <small style="color: var(--text-light); display: block; margin-bottom: 10px; line-height: 1.4;">
+            <i class="fa-solid fa-circle-info"></i> Username, email, sekolah, kelas, dan lokasi hanya dapat disunting oleh Developer setelah verifikasi foto pendaftaran.
+          </small>
+          <div class="form-group"><label>Username (Read-Only)</label><input id="editUsername" disabled style="background: rgba(0,0,0,0.25); cursor: not-allowed; opacity: 0.6;"></div>
+          <div class="form-group"><label>Email (Read-Only)</label><input id="editEmail" type="email" disabled style="background: rgba(0,0,0,0.25); cursor: not-allowed; opacity: 0.6;"></div>
+          <div class="form-group"><label>Kewarganegaraan (Read-Only)</label><input id="editCountry" disabled style="background: rgba(0,0,0,0.25); cursor: not-allowed; opacity: 0.6;"></div>
+          <div class="form-group"><label>Kelas (Read-Only)</label><input id="editClass" disabled style="background: rgba(0,0,0,0.25); cursor: not-allowed; opacity: 0.6;"></div>
+          <div class="form-group"><label>Sekolah (Read-Only)</label><input id="editSchool" disabled style="background: rgba(0,0,0,0.25); cursor: not-allowed; opacity: 0.6;"></div>
+        </div>
         <button class="primary-btn" type="submit">Simpan Profile</button>
       </form>
     </div>
@@ -200,8 +255,10 @@
       document.getElementById("profileUsername").innerText = "@" + data.username;
       document.getElementById("profileBio").innerText = data.bio || "Saya suka belajar hal baru.";
       document.getElementById("profileCountry").innerText = data.country || "Indonesia";
-      document.getElementById("profileClass").innerText = data.class_level || "Kelas 10";
-      document.getElementById("profileSchool").innerText = data.school || "";
+      document.getElementById("profileProvince").innerText = data.province || "-";
+      document.getElementById("profileCity").innerText = data.city || "-";
+      document.getElementById("profileClass").innerText = data.class_level || "-";
+      document.getElementById("profileSchool").innerText = data.school || "-";
       const avatarUrl = data.avatar || "https://i.pravatar.cc/100?img=12";
       document.getElementById("profileAvatar").src = avatarUrl;
       document.getElementById("navProfileImg").src = avatarUrl;
@@ -234,6 +291,21 @@
           </button>
         `;
       }).join("");
+
+      // Update verification badges
+      const fields = [
+          { id: 'Province', val: data.province },
+          { id: 'City',     val: data.city },
+          { id: 'School',   val: data.school },
+          { id: 'Class',    val: data.class_level },
+      ];
+      fields.forEach(({ id, val }) => {
+          const badge = document.getElementById('badge' + id);
+          if (!badge) return;
+          const isVerified = val && val !== '-';
+          badge.className = 'verify-badge ' + (isVerified ? 'verified' : 'unverified');
+          badge.textContent = isVerified ? '✓ Terverifikasi' : '⏳ Menunggu verifikasi';
+      });
     }
 
     function openEditProfileModal() {
@@ -255,6 +327,10 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       renderProfile();
+      // Auto-refresh profile every 30 seconds to reflect developer changes from CSV/admin
+      setInterval(() => {
+          renderProfile();
+      }, 30000);
       document.getElementById("editAvatarInput").addEventListener("change", function() {
         if(this.files && this.files[0]) {
           const reader = new FileReader();
@@ -270,11 +346,7 @@
         
         const updateData = {
           name: document.getElementById("editName").value,
-          username: document.getElementById("editUsername").value,
           bio: document.getElementById("editBio").value,
-          country: document.getElementById("editCountry").value,
-          class_level: document.getElementById("editClass").value,
-          school: document.getElementById("editSchool").value,
           avatar: currentProfileData.avatar
         };
 

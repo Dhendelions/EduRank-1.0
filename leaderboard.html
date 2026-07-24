@@ -136,6 +136,35 @@
             gap: 14px;
         }
     }
+    .verified-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(16, 185, 129, 0.18);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        margin-left: 8px;
+        vertical-align: middle;
+        letter-spacing: 0.02em;
+    }
+    .tab-verified-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        margin-left: 6px;
+        vertical-align: middle;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+    }
   </style>
 </head>
 <body>
@@ -190,14 +219,14 @@
         
         <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
             <button class="secondary-btn active" id="tabNasional" style="background:var(--primary); color:white;" onclick="changeRegion('Nasional')">Nasional</button>
-            <button class="secondary-btn" id="tabProvinsi" onclick="changeRegion('Provinsi')">Provinsi</button>
-            <button class="secondary-btn" id="tabKota" onclick="changeRegion('Kota')">Kab/Kota</button>
-            <button class="secondary-btn" id="tabSekolah" onclick="changeRegion('Sekolah')">Sekolah</button>
+            <button class="secondary-btn" id="tabProvinsi" onclick="changeRegion('Provinsi')"><span id="tabLblProvinsi">Provinsi</span></button>
+            <button class="secondary-btn" id="tabKota" onclick="changeRegion('Kota')"><span id="tabLblKota">Kab/Kota</span></button>
+            <button class="secondary-btn" id="tabSekolah" onclick="changeRegion('Sekolah')"><span id="tabLblSekolah">Sekolah</span></button>
         </div>
         
         <div class="leaderboard-container">
           <div class="leaderboard-header">
-            <h2><i class="fa-solid fa-trophy" style="color: #fbbf24; margin-right: 10px;"></i> Top 10 <span id="lblRegion">Nasional</span></h2>
+            <h2><i class="fa-solid fa-trophy" style="color: #fbbf24; margin-right: 10px;"></i> Top 10 <span id="lblRegion">Nasional</span><span id="lblVerifiedBadge" style="display:none;" class="verified-chip"><i class="fa-solid fa-circle-check"></i> verifikasi</span></h2>
             <select id="mapelSelect" class="leaderboard-filter" onchange="renderLeaderboard()" style="padding: 10px 36px 10px 14px; border-radius: 12px; outline: none; font-family: inherit;">
                 <option value="Semua Mapel">Semua Mapel</option>
                 <option value="Matematika">Matematika</option>
@@ -228,6 +257,10 @@
   <script src="interaksi.js"></script>
   <script>
     let currentRegion = 'Nasional';
+    // Track which region tabs are verified for the current user
+    let verifiedTabs = { Provinsi: false, Kota: false, Sekolah: false };
+    // Store actual location values for display in title
+    let userLocation = { province: '-', city: '-', school: '-' };
 
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
@@ -243,6 +276,40 @@
         const url = String(value || '').trim();
         return /^(https?:|data:image\/)/i.test(url) ? url : 'https://i.pravatar.cc/100?img=12';
     }
+
+    // Checks the current user's profile and marks region tabs as verified or not
+    async function checkUserLocationStatus() {
+        const token = localStorage.getItem('edurank_token');
+        if (!token) return;
+        try {
+            const res = await fetch(getApiUrl('/api/profile'), {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            verifiedTabs.Provinsi = data.province && data.province !== '-';
+            verifiedTabs.Kota     = data.city     && data.city     !== '-';
+            verifiedTabs.Sekolah  = data.school   && data.school   !== '-';
+
+            // Store actual location values for title display
+            userLocation.province = data.province || '-';
+            userLocation.city     = data.city     || '-';
+            userLocation.school   = data.school   || '-';
+
+            const chipHtml = '<span class="tab-verified-chip"><i class="fa-solid fa-circle-check"></i> verifikasi</span>';
+
+            const lblProvinsi = document.getElementById('tabLblProvinsi');
+            const lblKota     = document.getElementById('tabLblKota');
+            const lblSekolah  = document.getElementById('tabLblSekolah');
+
+            if (lblProvinsi) lblProvinsi.innerHTML = verifiedTabs.Provinsi ? 'Provinsi' + chipHtml : 'Provinsi';
+            if (lblKota)     lblKota.innerHTML     = verifiedTabs.Kota     ? 'Kab/Kota' + chipHtml : 'Kab/Kota';
+            if (lblSekolah)  lblSekolah.innerHTML  = verifiedTabs.Sekolah  ? 'Sekolah'  + chipHtml : 'Sekolah';
+        } catch(e) {
+            console.error('Failed to check location status:', e);
+        }
+    }
     
     function changeRegion(region) {
         currentRegion = region;
@@ -257,14 +324,37 @@
             document.getElementById(id).style.color = "";
         });
         
-        const activeBtn = document.getElementById('tab' + (region === 'Kab/Kota' ? 'Kota' : region));
+        const tabKey = region === 'Kota' ? 'Kota' : region;
+        const activeBtn = document.getElementById('tab' + tabKey);
         if(activeBtn) {
             activeBtn.classList.add('active');
             activeBtn.style.background = "var(--primary)";
             activeBtn.style.color = "white";
         }
-        
-        document.getElementById('lblRegion').innerText = region;
+
+        // Update main header label and verified badge
+        const lblRegion = document.getElementById('lblRegion');
+        const lblBadge  = document.getElementById('lblVerifiedBadge');
+        const regionLabel = {
+            Nasional: 'Nasional', Provinsi: 'Provinsi', Kota: 'Kab/Kota', Sekolah: 'Sekolah'
+        }[tabKey] || region;
+        if (lblRegion) lblRegion.innerText = regionLabel;
+
+        // Append actual location name if verified, e.g. "Top 10 Provinsi: Jawa Barat"
+        const isVerified = region !== 'Nasional' && verifiedTabs[region];
+        if (lblBadge) lblBadge.style.display = isVerified ? 'inline-flex' : 'none';
+
+        if (isVerified) {
+            const locationName = {
+                Provinsi: userLocation.province,
+                Kota:     userLocation.city,
+                Sekolah:  userLocation.school
+            }[region] || '';
+            if (lblRegion && locationName && locationName !== '-') {
+                lblRegion.innerHTML = `${regionLabel}: <em style="font-style:normal; color: #a5b4fc;">${locationName}</em>`;
+            }
+        }
+
         renderLeaderboard();
     }
     
@@ -283,9 +373,27 @@
         const querySubject = subjectMap[mapelSelect] || "all";
         
         try {
-            const res = await fetch(getApiUrl(`/api/leaderboard?subject=${querySubject}`));
+            const token = localStorage.getItem("edurank_token");
+            const headers = {};
+            if (token) {
+                headers["Authorization"] = "Bearer " + token;
+            }
+            const res = await fetch(getApiUrl(`/api/leaderboard?subject=${querySubject}&region=${currentRegion}`), { headers });
             if(!res.ok) throw new Error("API fail");
             const data = await res.json();
+            
+            if (data.error && data.error === "LOKASI_BELUM_VERIFIKASI") {
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 50px 20px; color: var(--text-light);">
+                        <i class="fa-solid fa-location-crosshairs" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 20px; opacity: 0.8;"></i>
+                        <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text); margin-bottom: 10px;">Lokasi Belum Terverifikasi</h3>
+                        <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto; line-height: 1.6; color: var(--text-light);">
+                            Lokasi Anda masih ditulis <strong>'-'</strong> oleh Developer. Tunggu hingga verifikasi gambar selesai untuk melihat leaderboard wilayah Anda.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
             
             list.innerHTML = '';
             
@@ -318,7 +426,7 @@
                   </div>
                   <div class="player-score">${currentElo.toLocaleString()} ELO <span>${rank.name}</span></div>
                   <div class="leaderboard-meta">${winrate}% <span>Winrate</span></div>
-                  <div class="leaderboard-meta">${escapeHtml(p.school || '-')} <span>${escapeHtml(p.country || 'Indonesia')}</span></div>
+                  <div class="leaderboard-meta">${escapeHtml(p.school || '-')} <span>${escapeHtml(p.province && p.province !== '-' ? p.province + (p.city && p.city !== '-' ? ', ' + p.city : '') : p.country || 'Indonesia')}</span></div>
                 </li>
                 `;
                 list.innerHTML += html;
@@ -332,10 +440,10 @@
     
     // Init
     document.addEventListener("DOMContentLoaded", () => {
-        // Need to add listener to select
         const mapelSelect = document.getElementById('mapelSelect');
         if(mapelSelect) mapelSelect.addEventListener('change', renderLeaderboard);
-        renderLeaderboard();
+        // Check location verification status to update tab labels
+        checkUserLocationStatus().then(() => renderLeaderboard());
     });
   </script>
 </body>

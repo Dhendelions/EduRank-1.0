@@ -23,6 +23,7 @@ const io = new Server(server, {
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, '..')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const JWT_SECRET = process.env.JWT_SECRET || (
     process.env.NODE_ENV === 'production'
@@ -54,8 +55,17 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
+        
+        db.get(`SELECT banned FROM users WHERE id = ?`, [user.id], (dbErr, dbUser) => {
+            if (dbErr || !dbUser) {
+                return res.sendStatus(403);
+            }
+            if (dbUser.banned) {
+                return res.status(403).json({ error: "Akun anda telah diban" });
+            }
+            req.user = user;
+            next();
+        });
     });
 };
 
@@ -80,28 +90,45 @@ app.post('/api/feedback', (req, res) => {
 
 // 1. Register
 app.post('/api/register', async (req, res) => {
-    const { name, email, password } = req.body || {};
+    const { name, email, password, birthDate, studentPhoto, studentCardPhoto } = req.body || {};
+    
+    const registrationChecker = require('./registrationChecker');
+    
+    // Validate registration input
+    const validation = registrationChecker.validateRegistration({
+        name, email, password, birthDate, studentPhoto, studentCardPhoto
+    });
+    
+    if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+    }
+
     const trimmedName = String(name || '').trim();
     const trimmedEmail = String(email || '').trim().toLowerCase();
     const trimmedPassword = String(password || '');
 
-    if (!trimmedName || !trimmedEmail.includes('@') || !trimmedEmail.includes('.') || trimmedPassword.length < 8) {
-        return res.status(400).json({ error: "Please provide a valid name, email, and password with at least 8 characters." });
-    }
-
     try {
+        // Save base64 images to file system and CSV log
+        const saveInfo = registrationChecker.saveRegistration({
+            name: trimmedName,
+            email: trimmedEmail,
+            birthDate,
+            studentPhoto,
+            studentCardPhoto
+        });
+
         const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
-        const username = trimmedEmail.split('@')[0] + Math.floor(Math.random() * 1000);
         
-        db.run(`INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)`,
-            [trimmedName, username, trimmedEmail, hashedPassword], function(err) {
+        db.run(`INSERT INTO users (name, username, email, password, birth_date, student_photo, student_card_photo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [trimmedName, '-', trimmedEmail, hashedPassword, birthDate, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl], function(err) {
                 if (err) {
-                    return res.status(400).json({ error: "Email or username already exists." });
+                    return res.status(400).json({ error: "Email already registered." });
                 }
                 res.json({ message: "Registration successful" });
             });
     } catch (e) {
-        res.status(500).json({ error: "Server error" });
+        console.error("Register error:", e);
+        res.status(500).json({ error: "Server error during registration." });
     }
 });
 
@@ -120,6 +147,11 @@ app.post('/api/login', (req, res) => {
             return res.status(400).json({ error: "Invalid credentials" });
         }
         
+        // Check if user is banned
+        if (user.banned) {
+            return res.status(403).json({ error: "Akun anda telah diban" });
+        }
+        
         const validPassword = await bcrypt.compare(trimmedPassword, user.password);
         if (!validPassword) {
             return res.status(400).json({ error: "Invalid credentials" });
@@ -135,7 +167,7 @@ app.post('/api/login', (req, res) => {
 
 // 3. Get Profile
 app.get('/api/profile', authenticateToken, (req, res) => {
-    db.get(`SELECT id, name, username, email, bio, country, class_level, school, avatar, exp, matches, wins, elo_matematika, elo_fisika, elo_bahasainggris, elo_informatika, highest_matematika, highest_fisika, highest_bahasainggris, highest_informatika FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+    db.get(`SELECT id, name, username, email, bio, country, province, city, class_level, school, avatar, exp, matches, wins, elo_matematika, elo_fisika, elo_bahasainggris, elo_informatika, highest_matematika, highest_fisika, highest_bahasainggris, highest_informatika, student_photo, student_card_photo, banned FROM users WHERE id = ?`, [req.user.id], (err, user) => {
         if (err || !user) return res.status(404).json({ error: "User not found" });
         res.json(user);
     });
@@ -146,11 +178,7 @@ app.put('/api/profile', authenticateToken, (req, res) => {
     const input = req.body || {};
     const limits = {
         name: 80,
-        username: 30,
         bio: 500,
-        country: 80,
-        class_level: 30,
-        school: 120,
         avatar: 1_500_000
     };
     const profile = Object.fromEntries(Object.entries(limits).map(([key, limit]) => [
@@ -158,17 +186,17 @@ app.put('/api/profile', authenticateToken, (req, res) => {
         String(input[key] || '').trim().slice(0, limit)
     ]));
 
-    if (!profile.name || !/^[a-zA-Z0-9._-]{3,30}$/.test(profile.username)) {
-        return res.status(400).json({ error: "Name is required and username must be 3-30 characters (letters, numbers, . _ -)." });
+    if (!profile.name) {
+        return res.status(400).json({ error: "Name is required." });
     }
 
     if (profile.avatar && !/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(profile.avatar)) {
         return res.status(400).json({ error: "Avatar must be an image upload." });
     }
 
-    db.run(`UPDATE users SET name = ?, username = ?, bio = ?, country = ?, class_level = ?, school = ?, avatar = ? WHERE id = ?`,
-        [profile.name, profile.username, profile.bio, profile.country, profile.class_level, profile.school, profile.avatar, req.user.id], function(err) {
-            if (err) return res.status(400).json({ error: "Update failed, username might be taken." });
+    db.run(`UPDATE users SET name = ?, bio = ?, avatar = ? WHERE id = ?`,
+        [profile.name, profile.bio, profile.avatar, req.user.id], function(err) {
+            if (err) return res.status(400).json({ error: "Update failed." });
             res.json({ message: "Profile updated" });
         });
 });
@@ -186,12 +214,111 @@ app.get('/api/leaderboard', (req, res) => {
         orderBy = `elo_${subject} DESC`;
     }
     
-    db.all(`SELECT id, name, username, country, school, avatar, elo_matematika, elo_fisika, elo_bahasainggris, 
-            elo_informatika, wins, matches, 
-            (elo_matematika + elo_fisika + elo_bahasainggris + elo_informatika) as total_elo 
-            FROM users ORDER BY ${orderBy} LIMIT 100`, (err, rows) => {
+    const region = req.query.region || 'Nasional';
+    
+    // Optional token auth to query user locations
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    let loggedInUser = null;
+    if (token) {
+        try {
+            loggedInUser = jwt.verify(token, JWT_SECRET);
+        } catch(e) {}
+    }
+
+    const fetchLeaderboard = (userLocation = null) => {
+        let whereClause = ' WHERE banned = 0 ';
+        let queryParams = [];
+        
+        if (userLocation) {
+            if (region === 'Provinsi' && userLocation.province && userLocation.province !== '-') {
+                whereClause += ' AND province = ? ';
+                queryParams.push(userLocation.province);
+            } else if (region === 'Kota' && userLocation.city && userLocation.city !== '-') {
+                whereClause += ' AND city = ? ';
+                queryParams.push(userLocation.city);
+            } else if (region === 'Sekolah' && userLocation.school && userLocation.school !== '-') {
+                whereClause += ' AND school = ? ';
+                queryParams.push(userLocation.school);
+            } else if (region !== 'Nasional') {
+                return res.json({ error: "LOKASI_BELUM_VERIFIKASI" });
+            }
+        } else if (region !== 'Nasional') {
+            return res.json({ error: "LOKASI_BELUM_VERIFIKASI" });
+        }
+
+        db.all(`SELECT id, name, username, country, province, city, school, avatar, elo_matematika, elo_fisika, elo_bahasainggris, 
+                elo_informatika, wins, matches, 
+                (elo_matematika + elo_fisika + elo_bahasainggris + elo_informatika) as total_elo 
+                FROM users ${whereClause} ORDER BY ${orderBy} LIMIT 100`, queryParams, (err, rows) => {
+            if (err) return res.status(500).json({ error: "Database error" });
+            res.json(rows);
+        });
+    };
+
+    if (loggedInUser && region !== 'Nasional') {
+        db.get(`SELECT province, city, school FROM users WHERE id = ?`, [loggedInUser.id], (err, u) => {
+            if (err || !u) {
+                fetchLeaderboard(null);
+            } else {
+                fetchLeaderboard(u);
+            }
+        });
+    } else {
+        fetchLeaderboard(null);
+    }
+});
+
+// --- DEVELOPER ADMIN API ---
+
+// 1. Get all players
+app.get('/api/admin/users', (req, res) => {
+    db.all(`SELECT * FROM users`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: "Database error" });
         res.json(rows);
+    });
+});
+
+// 2. Assign nickname & location credentials
+app.post('/api/admin/update-profile', (req, res) => {
+    const { id, username, province, city, school, class_level } = req.body || {};
+    if (!id) return res.status(400).json({ error: "User ID is required." });
+
+    db.run(`UPDATE users SET username = ?, province = ?, city = ?, school = ?, class_level = ? WHERE id = ?`,
+        [
+            String(username || '-').trim(), 
+            String(province || '-').trim(), 
+            String(city || '-').trim(), 
+            String(school || '-').trim(), 
+            String(class_level || '-').trim(), 
+            Number(id)
+        ],
+        function(err) {
+            if (err) return res.status(400).json({ error: err.message || "Failed to update profile details." });
+            res.json({ message: "User details updated successfully." });
+        }
+    );
+});
+
+// 3. Ban / Unban player
+app.post('/api/admin/ban', (req, res) => {
+    const { id, banned } = req.body || {};
+    if (!id) return res.status(400).json({ error: "User ID is required." });
+
+    db.run(`UPDATE users SET banned = ? WHERE id = ?`, [Number(banned) ? 1 : 0, Number(id)], function(err) {
+        if (err) return res.status(400).json({ error: "Failed to update ban status." });
+        res.json({ message: banned ? "User has been banned." : "User has been unbanned." });
+    });
+});
+
+// 4. Delete player account
+app.delete('/api/admin/users/:id', (req, res) => {
+    const userId = Number(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID." });
+
+    db.run(`DELETE FROM users WHERE id = ?`, [userId], function(err) {
+        if (err) return res.status(400).json({ error: "Failed to delete user." });
+        res.json({ message: "User account deleted successfully." });
     });
 });
 
@@ -608,7 +735,10 @@ app.get('/api/admin/cheat-log', authenticateToken, (req, res) => {
 });
 
 function startServer(options = {}) {
-    const { port, host } = resolveServerConfig(options);
+    const config = resolveServerConfig(options);
+    const port = config.port;
+    const host = config.host;
+
     return server.listen(port, host, () => {
         console.log(`Server is running on ${host}:${port}`);
         console.log(`[ANTI-CHEAT] System active: Speed detection, Rate limiting, Session dedup, Input validation`);

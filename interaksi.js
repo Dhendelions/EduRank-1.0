@@ -2438,6 +2438,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     initAuthGate();
+    syncProfileWithServer();
+    checkBanStatus();
 });
 
 function initAuthGate(){
@@ -2564,6 +2566,8 @@ function handleRegisterSubmit(event){
     const confirm = getAuthValue("authRegisterConfirm");
     const studentPhoto = document.getElementById("studentPhotoInput")?.files?.[0];
     const studentCardPhoto = document.getElementById("studentCardPhotoInput")?.files?.[0];
+    const studentPhotoBase64 = localStorage.getItem("studentPhotoData");
+    const studentCardPhotoBase64 = localStorage.getItem("studentCardPhotoData");
     let valid = true;
 
     if(!isValidFullName(name)){
@@ -2581,12 +2585,12 @@ function handleRegisterSubmit(event){
         valid = false;
     }
 
-    if(!studentPhoto){
+    if(!studentPhoto && !studentPhotoBase64){
         setAuthWarning("studentPhotoInput", "studentPhotoWarning", "Foto pelajar wajib diambil atau diunggah lewat kamera.");
         valid = false;
     }
 
-    if(!studentCardPhoto){
+    if(!studentCardPhoto && !studentCardPhotoBase64){
         setAuthWarning("studentCardPhotoInput", "studentCardPhotoWarning", "Foto wajah bersama kartu pelajar wajib diambil untuk verifikasi.");
         valid = false;
     }
@@ -2609,7 +2613,14 @@ function handleRegisterSubmit(event){
     fetch(getApiUrl('/api/register'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ 
+            name, 
+            email, 
+            password, 
+            birthDate, 
+            studentPhoto: studentPhotoBase64, 
+            studentCardPhoto: studentCardPhotoBase64 
+        })
     })
     .then(res => res.json())
     .then(data => {
@@ -2624,6 +2635,8 @@ function handleRegisterSubmit(event){
                 hasStudentCardPhoto:true,
                 provider:"email"
             });
+            localStorage.removeItem("studentPhotoData");
+            localStorage.removeItem("studentCardPhotoData");
             startLearningStyleQuiz();
         }
     })
@@ -2684,16 +2697,20 @@ function handleGoogleAuth(){
 
 function saveAuthUser(user){
     localStorage.setItem("name", user.name);
-    localStorage.setItem("username", user.name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 18) || "student");
+    localStorage.setItem("username", "-");
     localStorage.setItem("email", user.email);
     localStorage.setItem("birthDate", user.birthDate || "");
     localStorage.setItem("authProvider", user.provider);
     localStorage.setItem("studentPhotoVerified", user.hasStudentPhoto ? "pending-review" : "provider-skip");
     localStorage.setItem("studentCardVerified", user.hasStudentCardPhoto ? "pending-review" : "provider-skip");
     localStorage.setItem("edurankLoggedIn", "true");
+    localStorage.setItem("province", "-");
+    localStorage.setItem("city", "-");
+    localStorage.setItem("school", "-");
+    localStorage.setItem("class_level", "-");
 
     if(!localStorage.getItem("bio")) localStorage.setItem("bio", "Bio belum diisi");
-    if(!localStorage.getItem("country")) localStorage.setItem("country", "Belum diisi");
+    if(!localStorage.getItem("country")) localStorage.setItem("country", "Indonesia");
     if(!localStorage.getItem("rank")) localStorage.setItem("rank", "Bronze");
 }
 
@@ -2925,4 +2942,97 @@ function scrollToRequestedSection(){
     if(target){
         target.scrollIntoView({ behavior:"smooth", block:"start" });
     }
+}
+
+// =========================
+// SYNC PROFILE & BAN CHECK
+// =========================
+
+async function syncProfileWithServer() {
+    const token = localStorage.getItem("edurank_token");
+    if (!token) return;
+    try {
+        const res = await fetch(getApiUrl('/api/profile'), {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem("name", data.name || "Guest User");
+            localStorage.setItem("username", data.username || "-");
+            localStorage.setItem("bio", data.bio || "");
+            localStorage.setItem("country", data.country || "Indonesia");
+            localStorage.setItem("province", data.province || "-");
+            localStorage.setItem("city", data.city || "-");
+            localStorage.setItem("school", data.school || "-");
+            localStorage.setItem("class_level", data.class_level || "-");
+            if (data.avatar) localStorage.setItem("avatar", data.avatar);
+            loadProfile();
+        }
+    } catch(e) {
+        console.error("Failed to sync profile:", e);
+    }
+}
+
+async function checkBanStatus() {
+    const token = localStorage.getItem("edurank_token");
+    if (!token) return;
+    try {
+        const res = await fetch(getApiUrl('/api/profile'), {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        if (res.status === 403) {
+            const data = await res.json();
+            if (data.error && data.error.includes("diban")) {
+                showBanScreen();
+            }
+        }
+    } catch(e) {
+        console.error("Failed to check ban status:", e);
+    }
+}
+
+function showBanScreen() {
+    let overlay = document.getElementById("banOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "banOverlay";
+        overlay.style = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.98);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            padding: 20px;
+        `;
+        overlay.innerHTML = `
+            <div style="background: rgba(220, 38, 38, 0.1); border: 2px dashed #dc2626; border-radius: 24px; padding: 40px; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <i class="fa-solid fa-ban" style="font-size: 5rem; color: #dc2626; margin-bottom: 20px; animation: pulse 2s infinite;"></i>
+                <h1 style="font-size: 2rem; font-weight: 700; color: #ef4444; margin-bottom: 15px;">AKUN ANDA TELAH DIBAN</h1>
+                <p style="font-size: 1rem; color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+                    Akses Anda ke platform EduRank telah ditangguhkan karena melanggar ketentuan layanan kami. Jika Anda merasa ini adalah kesalahan, silakan hubungi tim dukungan kami.
+                </p>
+                <button onclick="localStorage.clear(); location.reload();" style="background: #dc2626; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);">
+                    Keluar / Kembali ke Beranda
+                </button>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.05); }
+                    100% { transform: scale(1); }
+                }
+            </style>
+        `;
+        document.body.appendChild(overlay);
+    }
+    document.body.classList.add("auth-locked");
 }

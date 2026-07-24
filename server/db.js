@@ -1,244 +1,167 @@
+const mysql = require('mysql2');
 const path = require('path');
-const fs = require('fs');
 
-function getDbPath() {
-    return process.env.EDURANK_DB_PATH || path.resolve(__dirname, 'edurank.json');
-}
+// Load environment variables
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
-function ensureDb() {
-    const dbPath = getDbPath();
-    if (!fs.existsSync(dbPath)) {
-        fs.writeFileSync(dbPath, JSON.stringify({ users: [], matchHistory: [] }, null, 2));
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'edurank',
+    multipleStatements: true,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// Test connection on startup
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('\n================================================================');
+        console.error('[MYSQL-ERROR] Gagal terhubung ke database MySQL!');
+        console.error(`Pesan Error: ${err.message}`);
+        console.error('Silakan pastikan:');
+        console.error('1. Server MySQL Anda sudah berjalan (running)');
+        console.error('2. Database "edurank" sudah dibuat (CREATE DATABASE edurank;)');
+        console.error('3. Kredensial di file server/.env sudah sesuai');
+        console.error('================================================================\n');
+        return;
     }
-}
+    console.log('[MYSQL] Koneksi ke MySQL berhasil dibangun.');
+    connection.release();
+});
 
-function readDb() {
-    ensureDb();
-    return JSON.parse(fs.readFileSync(getDbPath(), 'utf8'));
-}
-
-function writeDb(data) {
-    ensureDb();
-    fs.writeFileSync(getDbPath(), JSON.stringify(data, null, 2));
-}
-
-function addFeedback(feedback) {
-    const data = readDb();
-    if (!Array.isArray(data.feedback)) data.feedback = [];
-    const entry = {
-        id: data.feedback.length ? Math.max(...data.feedback.map((item) => Number(item.id) || 0)) + 1 : 1,
-        ...feedback
-    };
-    data.feedback.push(entry);
-    writeDb(data);
-    return entry;
-}
-
-function normalizedText(value) {
-    return String(value ?? '').trim();
-}
-
-function normalizeUser(user) {
-    return {
-        ...user,
-        name: normalizedText(user.name) || 'Siswa EduRank',
-        username: normalizedText(user.username) || `user${user.id}`,
-        email: normalizedText(user.email).toLowerCase(),
-        bio: normalizedText(user.bio),
-        country: normalizedText(user.country) || 'Indonesia',
-        class_level: normalizedText(user.class_level) || 'Kelas 10',
-        school: normalizedText(user.school),
-        avatar: normalizedText(user.avatar),
-        exp: Number(user.exp) || 0,
-        matches: Number(user.matches) || 0,
-        wins: Number(user.wins) || 0,
-        elo_matematika: Number(user.elo_matematika) || 420,
-        elo_fisika: Number(user.elo_fisika) || 228,
-        elo_bahasainggris: Number(user.elo_bahasainggris) || 170,
-        elo_informatika: Number(user.elo_informatika) || 760
-    };
-}
-
+// Auto-initialize tables
 function initDb() {
-    ensureDb();
-    console.log('Using JSON file database at', getDbPath());
+    const createUsersTable = `
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            username VARCHAR(255) DEFAULT '-',
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            bio TEXT,
+            country VARCHAR(255) DEFAULT 'Indonesia',
+            province VARCHAR(255) DEFAULT '-',
+            city VARCHAR(255) DEFAULT '-',
+            class_level VARCHAR(255) DEFAULT '-',
+            school VARCHAR(255) DEFAULT '-',
+            avatar LONGTEXT,
+            exp INT DEFAULT 0,
+            matches INT DEFAULT 0,
+            wins INT DEFAULT 0,
+            elo_matematika INT DEFAULT 420,
+            elo_fisika INT DEFAULT 228,
+            elo_bahasainggris INT DEFAULT 170,
+            elo_informatika INT DEFAULT 760,
+            highest_matematika VARCHAR(255) DEFAULT 'Bronze III',
+            highest_fisika VARCHAR(255) DEFAULT 'Bronze I',
+            highest_bahasainggris VARCHAR(255) DEFAULT 'Bronze I',
+            highest_informatika VARCHAR(255) DEFAULT 'Epic IV',
+            birth_date VARCHAR(255) DEFAULT '-',
+            student_photo VARCHAR(255) DEFAULT '-',
+            student_card_photo VARCHAR(255) DEFAULT '-',
+            banned TINYINT DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `;
+
+    const createFeedbackTable = `
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            created_at VARCHAR(255)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `;
+
+    pool.query(createUsersTable, (err) => {
+        if (err) {
+            console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel users:', err.message);
+        } else {
+            console.log('[MYSQL] Tabel "users" terverifikasi/dibuat.');
+        }
+    });
+
+    pool.query(createFeedbackTable, (err) => {
+        if (err) {
+            console.error('[MYSQL-ERROR] Gagal membuat/memverifikasi tabel feedback:', err.message);
+        } else {
+            console.log('[MYSQL] Tabel "feedback" terverifikasi/dibuat.');
+        }
+    });
 }
 
+// Start table verification
+initDb();
+
+// SQLite API compatibility wrapper
 function run(query, params, callback) {
-    initDb();
     if (typeof params === 'function') {
         callback = params;
         params = [];
     }
 
-    const data = readDb();
-    const queryLower = String(query).trim().toLowerCase();
-
-    if (queryLower.startsWith('insert into users')) {
-        const [name, username, email, password] = params;
-        const existing = data.users.some((user) => {
-            const current = normalizeUser(user);
-            return current.email === String(email).toLowerCase() || current.username.toLowerCase() === String(username).toLowerCase();
-        });
-        if (existing) {
-            if (callback) callback(new Error('User already exists'));
+    pool.query(query, params, (err, results) => {
+        if (err) {
+            if (callback) callback(err);
             return;
         }
-        const nextId = data.users.length ? Math.max(...data.users.map((u) => u.id)) + 1 : 1;
-        const newUser = {
-            id: nextId,
-            name,
-            username,
-            email,
-            password,
-            bio: '',
-            country: 'Indonesia',
-            class_level: 'Kelas 10',
-            school: '',
-            avatar: '',
-            exp: 0,
-            matches: 0,
-            wins: 0,
-            elo_matematika: 420,
-            elo_fisika: 228,
-            elo_bahasainggris: 170,
-            elo_informatika: 760,
-            highest_matematika: 'Bronze III',
-            highest_fisika: 'Bronze I',
-            highest_bahasainggris: 'Bronze I',
-            highest_informatika: 'Epic IV'
+
+        // Emulate SQLite's callback context (this.lastID, this.changes)
+        const context = {
+            lastID: results ? results.insertId : null,
+            changes: results ? results.affectedRows : null
         };
-        data.users.push(newUser);
-        writeDb(data);
-        if (callback) callback(null, { lastID: nextId, changes: 1 });
-        return;
-    }
 
-    if (queryLower.startsWith('update users set name = ?')) {
-        const userId = Number(params[params.length - 1]);
-        const index = data.users.findIndex((user) => user.id === userId);
-        if (index === -1) {
-            if (callback) callback(null, { changes: 0 });
-            return;
+        if (callback) {
+            callback.call(context, null, results);
         }
-
-        const [name, username, bio, country, classLevel, school, avatar] = params;
-        const usernameTaken = data.users.some((user) => user.id !== userId && normalizeUser(user).username.toLowerCase() === normalizedText(username).toLowerCase());
-        if (usernameTaken) {
-            if (callback) callback(new Error('Username already exists'));
-            return;
-        }
-
-        data.users[index] = normalizeUser({
-            ...data.users[index],
-            name,
-            username,
-            bio,
-            country,
-            class_level: classLevel,
-            school,
-            avatar
-        });
-        writeDb(data);
-        if (callback) callback(null, { changes: 1 });
-        return;
-    }
-
-    if (queryLower.startsWith('update users set exp = exp + ?')) {
-        const userId = Number(params[3]);
-        const index = data.users.findIndex((user) => user.id === userId);
-        if (index === -1) {
-            if (callback) callback(null, { changes: 0 });
-            return;
-        }
-
-        const eloField = query.match(/elo_(matematika|fisika|bahasainggris|informatika)\s*=\s*\?/i);
-        if (!eloField) {
-            if (callback) callback(new Error('Unsupported ELO subject'));
-            return;
-        }
-
-        const user = normalizeUser(data.users[index]);
-        user.exp += Number(params[0]) || 0;
-        user.matches += 1;
-        user.wins += Number(params[1]) || 0;
-        user[`elo_${eloField[1].toLowerCase()}`] = Number(params[2]) || 0;
-        data.users[index] = user;
-        writeDb(data);
-        if (callback) callback(null, { changes: 1 });
-        return;
-    }
-
-    if (callback) callback(null, { changes: 0 });
+    });
 }
 
 function get(query, params, callback) {
-    initDb();
     if (typeof params === 'function') {
         callback = params;
         params = [];
     }
 
-    const data = readDb();
-    const queryLower = String(query).trim().toLowerCase();
+    pool.query(query, params, (err, results) => {
+        if (err) {
+            if (callback) callback(err);
+            return;
+        }
 
-    if (queryLower.startsWith('select * from users where email = ?')) {
-        const email = params[0];
-        const user = data.users.find((entry) => normalizedText(entry.email).toLowerCase() === String(email).toLowerCase()) || null;
-        if (callback) callback(null, user);
-        return;
-    }
-
-    if (queryLower.startsWith('select id, name, username, email, bio, country, class_level, school, avatar, exp, matches, wins, elo_matematika, elo_fisika, elo_bahasainggris, elo_informatika, highest_matematika, highest_fisika, highest_bahasainggris, highest_informatika from users where id = ?')) {
-        const userId = Number(params[0]);
-        const user = data.users.find((entry) => entry.id === userId) || null;
-        if (callback) callback(null, user);
-        return;
-    }
-
-    if (queryLower.startsWith('select name, avatar, elo_')) {
-        const userId = Number(params[0]);
-        const user = data.users.find((entry) => entry.id === userId) || null;
-        if (callback) callback(null, user);
-        return;
-    }
-
-    if (callback) callback(null, null);
+        const row = results && results.length > 0 ? results[0] : null;
+        if (callback) callback(null, row);
+    });
 }
 
 function all(query, params, callback) {
-    initDb();
     if (typeof params === 'function') {
         callback = params;
         params = [];
     }
 
-    const data = readDb();
-    const queryLower = String(query).trim().toLowerCase();
+    pool.query(query, params, (err, results) => {
+        if (err) {
+            if (callback) callback(err);
+            return;
+        }
 
-    if (queryLower.startsWith('select id, name, username, country, school, avatar, elo_matematika, elo_fisika, elo_bahasainggris,')) {
-        const rows = data.users
-            .map((user) => ({
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                country: user.country,
-                school: user.school,
-                avatar: user.avatar,
-                elo_matematika: user.elo_matematika || 0,
-                elo_fisika: user.elo_fisika || 0,
-                elo_bahasainggris: user.elo_bahasainggris || 0,
-                elo_informatika: user.elo_informatika || 0,
-                wins: user.wins || 0,
-                matches: user.matches || 0,
-                total_elo: (user.elo_matematika || 0) + (user.elo_fisika || 0) + (user.elo_bahasainggris || 0) + (user.elo_informatika || 0)
-            }))
-            .sort((a, b) => b.total_elo - a.total_elo);
-        if (callback) callback(null, rows);
-        return;
-    }
+        if (callback) callback(null, results);
+    });
+}
 
-    if (callback) callback(null, []);
+function addFeedback(feedback) {
+    const query = 'INSERT INTO feedback (name, email, message, created_at) VALUES (?, ?, ?, ?)';
+    const params = [feedback.name, feedback.email, feedback.message, feedback.created_at];
+    pool.query(query, params, (err) => {
+        if (err) {
+            console.error('[MYSQL-ERROR] Gagal menyimpan feedback ke MySQL:', err.message);
+        }
+    });
 }
 
 module.exports = {
@@ -247,5 +170,7 @@ module.exports = {
     all,
     addFeedback,
     serialize: (fn) => fn(),
-    close: () => {}
+    close: () => {
+        pool.end();
+    }
 };
