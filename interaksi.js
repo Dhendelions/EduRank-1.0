@@ -2358,6 +2358,7 @@ function toggleDropdown(id){
     const dropdown =
     document.getElementById(id);
 
+    if(!dropdown) return;
     dropdown.classList.toggle("show");
 
 }
@@ -2613,34 +2614,36 @@ function handleRegisterSubmit(event){
     fetch(getApiUrl('/api/register'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            name, 
-            email, 
-            password, 
-            birthDate, 
-            studentPhoto: studentPhotoBase64, 
-            studentCardPhoto: studentCardPhotoBase64 
+        body: JSON.stringify({
+            name,
+            email,
+            password,
+            birthDate,
+            studentPhoto: studentPhotoBase64,
+            studentCardPhoto: studentCardPhotoBase64
         })
+    })
     .then(res => res.json())
     .then(data => {
-        if(data.error) {
+        if (data.error) {
             showCustomAlert(data.error, "error");
-        } else {
-            localStorage.setItem("edurank_token", data.token);
-            saveAuthUser({
-                name,
-                email,
-                birthDate,
-                hasStudentPhoto:true,
-                hasStudentCardPhoto:true,
-                provider:"email"
-            });
-            localStorage.removeItem("studentPhotoData");
-            localStorage.removeItem("studentCardPhotoData");
-            startLearningStyleQuiz();
+            return;
         }
+
+        localStorage.setItem("edurank_token", data.token);
+        saveAuthUser({
+            name,
+            email,
+            birthDate,
+            hasStudentPhoto: true,
+            hasStudentCardPhoto: true,
+            provider: "email"
+        });
+        localStorage.removeItem("studentPhotoData");
+        localStorage.removeItem("studentCardPhotoData");
+        startLearningStyleQuiz();
     })
-    .catch(err => {
+    .catch(() => {
         showCustomAlert("Gagal terhubung ke server.", "error");
     });
 }
@@ -2675,18 +2678,19 @@ function handleLoginSubmit(event){
     })
     .then(res => res.json())
     .then(data => {
-        if(data.error) {
+        if (data.error) {
             showCustomAlert(data.error, "error");
-        } else {
-            localStorage.setItem("edurank_token", data.token);
-            localStorage.setItem("name", data.user.name);
-            localStorage.setItem("username", data.user.username);
-            localStorage.setItem("email", data.user.email);
-            localStorage.setItem("edurankLoggedIn", "true");
-            startLearningStyleQuiz();
+            return;
         }
+
+        localStorage.setItem("edurank_token", data.token);
+        localStorage.setItem("name", data.user.name);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("email", data.user.email);
+        localStorage.setItem("edurankLoggedIn", "true");
+        startLearningStyleQuiz();
     })
-    .catch(err => {
+    .catch(() => {
         showCustomAlert("Gagal terhubung ke server.", "error");
     });
 }

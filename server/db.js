@@ -28,8 +28,9 @@ const pool = mysql.createPool({
     port: parsePort(resolvedPort, 3306),
     multipleStatements: false,
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: 20,
+    queueLimit: 100,
+    connectTimeout: 10_000
 });
 
 // Test connection on startup
