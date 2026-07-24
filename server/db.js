@@ -147,6 +147,51 @@ function initDb() {
             console.log('[MYSQL] Tabel "friends" terverifikasi/dibuat.');
         }
     });
+
+    // Lightweight migrations for older databases that may miss new columns.
+    const usersColumns = [
+        ['username', "ALTER TABLE users ADD COLUMN username VARCHAR(255) DEFAULT '-'"],
+        ['bio', "ALTER TABLE users ADD COLUMN bio TEXT"],
+        ['country', "ALTER TABLE users ADD COLUMN country VARCHAR(255) DEFAULT 'Indonesia'"],
+        ['province', "ALTER TABLE users ADD COLUMN province VARCHAR(255) DEFAULT '-'"],
+        ['city', "ALTER TABLE users ADD COLUMN city VARCHAR(255) DEFAULT '-'"],
+        ['class_level', "ALTER TABLE users ADD COLUMN class_level VARCHAR(255) DEFAULT '-'"],
+        ['school', "ALTER TABLE users ADD COLUMN school VARCHAR(255) DEFAULT '-'"],
+        ['avatar', "ALTER TABLE users ADD COLUMN avatar LONGTEXT"],
+        ['exp', "ALTER TABLE users ADD COLUMN exp INT DEFAULT 0"],
+        ['matches', "ALTER TABLE users ADD COLUMN matches INT DEFAULT 0"],
+        ['wins', "ALTER TABLE users ADD COLUMN wins INT DEFAULT 0"],
+        ['elo_matematika', "ALTER TABLE users ADD COLUMN elo_matematika INT DEFAULT 420"],
+        ['elo_fisika', "ALTER TABLE users ADD COLUMN elo_fisika INT DEFAULT 228"],
+        ['elo_bahasainggris', "ALTER TABLE users ADD COLUMN elo_bahasainggris INT DEFAULT 170"],
+        ['elo_informatika', "ALTER TABLE users ADD COLUMN elo_informatika INT DEFAULT 760"],
+        ['highest_matematika', "ALTER TABLE users ADD COLUMN highest_matematika VARCHAR(255) DEFAULT 'Bronze III'"],
+        ['highest_fisika', "ALTER TABLE users ADD COLUMN highest_fisika VARCHAR(255) DEFAULT 'Bronze I'"],
+        ['highest_bahasainggris', "ALTER TABLE users ADD COLUMN highest_bahasainggris VARCHAR(255) DEFAULT 'Bronze I'"],
+        ['highest_informatika', "ALTER TABLE users ADD COLUMN highest_informatika VARCHAR(255) DEFAULT 'Epic IV'"],
+        ['birth_date', "ALTER TABLE users ADD COLUMN birth_date VARCHAR(255) DEFAULT '-'"],
+        ['student_photo', "ALTER TABLE users ADD COLUMN student_photo VARCHAR(255) DEFAULT '-'"],
+        ['student_card_photo', "ALTER TABLE users ADD COLUMN student_card_photo VARCHAR(255) DEFAULT '-'"],
+        ['banned', "ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0"]
+    ];
+
+    usersColumns.forEach(([columnName, alterSql]) => {
+        pool.query(`SHOW COLUMNS FROM users LIKE ?`, [columnName], (showErr, rows) => {
+            if (showErr) {
+                console.error(`[MYSQL-ERROR] Gagal memeriksa kolom users.${columnName}:`, showErr.message);
+                return;
+            }
+            if (!rows || rows.length === 0) {
+                pool.query(alterSql, (alterErr) => {
+                    if (alterErr) {
+                        console.error(`[MYSQL-ERROR] Gagal menambah kolom users.${columnName}:`, alterErr.message);
+                    } else {
+                        console.log(`[MYSQL] Kolom users.${columnName} ditambahkan.`);
+                    }
+                });
+            }
+        });
+    });
 }
 
 // Start table verification
