@@ -2443,6 +2443,26 @@ document.addEventListener("DOMContentLoaded", () => {
     checkBanStatus();
 });
 
+document.addEventListener("click", (event) => {
+    const tabButton = event.target.closest("[data-auth-tab]");
+    if (tabButton) {
+        switchAuthMode(tabButton.dataset.authTab);
+        return;
+    }
+
+    const switchButton = event.target.closest("[data-auth-switch]");
+    if (switchButton) {
+        switchAuthMode(switchButton.dataset.authSwitch);
+        return;
+    }
+
+    const passwordButton = event.target.closest("[data-password-toggle]");
+    if (passwordButton) {
+        toggleAuthPassword(passwordButton);
+        return;
+    }
+});
+
 function initAuthGate(){
     const authGate = document.getElementById("authGate");
     if(!authGate) return;

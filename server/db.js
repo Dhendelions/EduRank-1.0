@@ -30,7 +30,9 @@ const pool = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 20,
     queueLimit: 100,
-    connectTimeout: 10_000
+    connectTimeout: 10_000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
 });
 
 // Test connection on startup
@@ -266,11 +268,18 @@ function addFeedback(feedback) {
     });
 }
 
+function ping(callback) {
+    pool.query('SELECT 1 AS ok', (err, rows) => {
+        if (callback) callback(err, rows && rows[0] ? rows[0] : null);
+    });
+}
+
 module.exports = {
     run,
     get,
     all,
     addFeedback,
+    ping,
     serialize: (fn) => fn(),
     close: () => {
         pool.end();

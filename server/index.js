@@ -95,6 +95,15 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+app.get('/health/db', (req, res) => {
+    db.ping((err) => {
+        if (err) {
+            return res.status(500).json({ status: 'error', error: err.message });
+        }
+        res.json({ status: 'ok' });
+    });
+});
+
 app.post('/api/feedback', (req, res) => {
     const name = String(req.body?.name || '').trim().slice(0, 80);
     const email = String(req.body?.email || '').trim().toLowerCase().slice(0, 120);
@@ -142,6 +151,7 @@ app.post('/api/register', async (req, res) => {
         db.run(`INSERT INTO users (name, username, email, password, birth_date, student_photo, student_card_photo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [trimmedName, '-', trimmedEmail, hashedPassword, birthDate, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl], function(err) {
                 if (err) {
+                    console.error("Register DB error code:", err.code, "message:", err.message);
                     if (err.code === 'ER_DUP_ENTRY' || String(err.message).includes('UNIQUE') || String(err.message).includes('duplicate')) {
                         return res.status(400).json({ error: "Email sudah terdaftar." });
                     }
@@ -178,6 +188,7 @@ app.post('/api/login', (req, res) => {
 
     db.get(`SELECT * FROM users WHERE email = ?`, [trimmedEmail], async (err, user) => {
         if (err || !user) {
+            if (err) console.error("Login DB error:", err);
             return res.status(400).json({ error: "Invalid credentials" });
         }
         
