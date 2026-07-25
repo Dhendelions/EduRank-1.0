@@ -533,6 +533,14 @@ section{
     margin-bottom:4px;
 }
 
+.panel-title{
+    margin:0 0 6px;
+    font-size:2rem;
+    line-height:1.05;
+    letter-spacing:-0.03em;
+    color:var(--text);
+}
+
 .friends-form{
     display:flex;
     gap:12px;
