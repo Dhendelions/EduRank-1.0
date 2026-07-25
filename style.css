@@ -509,15 +509,21 @@ section{
 
 .friends-panel{
     padding:24px;
+    min-height:520px;
+    display:flex;
+    flex-direction:column;
 }
 
 .history-panel{
     padding:24px;
     margin-top:24px;
+    min-height:460px;
     background:var(--surface-glass);
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
 }
 
 .friends-panel-head{
@@ -562,12 +568,20 @@ section{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
     gap:16px;
+    flex:1;
+    max-height:280px;
+    overflow-y:auto;
+    padding-right:6px;
 }
 
 .history-list{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
     gap:16px;
+    flex:1;
+    max-height:260px;
+    overflow-y:auto;
+    padding-right:6px;
 }
 
 .friend-card{
@@ -643,6 +657,20 @@ section{
     gap:8px;
     color:var(--text-light);
     font-size:0.84rem;
+}
+
+.section-title-tight{
+    margin-bottom:14px;
+}
+
+.section-title-tight h2{
+    margin-bottom:8px;
+    font-size:3rem;
+    line-height:1;
+}
+
+.section-title-tight p{
+    margin:0;
 }
 
 
