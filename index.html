@@ -530,6 +530,21 @@
             <p style="text-align: right; font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-top: -20px; margin-bottom: 20px;"
               id="heroRankNext">0 ELO to Silver</p>
 
+            <div class="hero-profile-summary">
+              <div>
+                <span>Player</span>
+                <strong id="heroProfileName">Guest</strong>
+              </div>
+              <div>
+                <span>Match</span>
+                <strong id="heroProfileMatches">0</strong>
+              </div>
+              <div>
+                <span>Winrate</span>
+                <strong id="heroProfileWinrate">0%</strong>
+              </div>
+            </div>
+
             <div class="subject-rank-tabs" id="subjectRankTabs"></div>
 
             <div class="rank-stats">
@@ -691,6 +706,38 @@
 
       </div>
 
+    </section>
+
+
+
+    <section class="friends-section" id="friends">
+      <div class="container">
+        <div class="section-title">
+          <h2>Teman Belajar</h2>
+          <p>
+            Tambahkan teman untuk menyusun daftar lawan atau partner belajar yang tersimpan di database Railway.
+          </p>
+        </div>
+
+        <div class="friends-panel">
+          <div class="friends-panel-head">
+            <div>
+              <h3>Daftar Teman</h3>
+              <p id="friendsSummary">Belum ada teman yang ditambahkan.</p>
+            </div>
+            <button class="primary-btn" type="button" onclick="refreshFriendsList()">
+              <i class="fa-solid fa-rotate"></i> Muat Ulang
+            </button>
+          </div>
+
+          <form class="friends-form" id="friendsForm">
+            <input class="friends-input" id="friendUsernameInput" type="text" placeholder="Masukkan username teman" />
+            <button class="primary-btn" type="submit">Tambah Teman</button>
+          </form>
+
+          <div class="friends-list" id="friendsList"></div>
+        </div>
+      </div>
     </section>
 
 

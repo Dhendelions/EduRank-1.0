@@ -255,6 +255,68 @@ app.put('/api/profile', authenticateToken, (req, res) => {
         });
 });
 
+app.get('/api/friends', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT f.id, f.user_id, f.friend_id, f.created_at,
+               u.id AS friend_user_id, u.username, u.nama AS name, u.avatar, u.country, u.city, u.school, u.class_level,
+               u.exp, u.matches, u.wins,
+               (u.elo_matematika + u.elo_fisika + u.elo_bahasainggris + u.elo_informatika) AS total_elo
+        FROM friends f
+        JOIN users u ON u.id = f.friend_id
+        WHERE f.user_id = ?
+        ORDER BY f.created_at DESC
+    `, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(rows || []);
+    });
+});
+
+app.post('/api/friends', authenticateToken, (req, res) => {
+    const rawFriendId = req.body?.friendId;
+    const rawUsername = String(req.body?.username || '').trim().toLowerCase();
+    const friendId = Number(rawFriendId);
+
+    const findFriendAndInsert = (sql, params) => {
+        db.get(sql, params, (err, target) => {
+            if (err) return res.status(500).json({ error: "Database error" });
+            if (!target || !target.id) return res.status(404).json({ error: "Teman tidak ditemukan." });
+            if (Number(target.id) === Number(req.user.id)) return res.status(400).json({ error: "Tidak bisa menambahkan diri sendiri." });
+
+            db.get(`SELECT id FROM friends WHERE user_id = ? AND friend_id = ?`, [req.user.id, target.id], (existsErr, existing) => {
+                if (existsErr) return res.status(500).json({ error: "Database error" });
+                if (existing) return res.status(400).json({ error: "Teman sudah ada di daftar." });
+
+                db.run(`INSERT INTO friends (user_id, friend_id) VALUES (?, ?)`, [req.user.id, target.id], function(insertErr) {
+                    if (insertErr) return res.status(500).json({ error: "Gagal menambahkan teman." });
+                    res.status(201).json({ message: "Teman berhasil ditambahkan." });
+                });
+            });
+        });
+    };
+
+    if (Number.isInteger(friendId) && friendId > 0) {
+        return findFriendAndInsert(`SELECT id FROM users WHERE id = ?`, [friendId]);
+    }
+
+    if (rawUsername) {
+        return findFriendAndInsert(`SELECT id FROM users WHERE username = ?`, [rawUsername]);
+    }
+
+    return res.status(400).json({ error: "friendId atau username diperlukan." });
+});
+
+app.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
+    const friendId = Number(req.params.friendId);
+    if (!Number.isInteger(friendId) || friendId <= 0) {
+        return res.status(400).json({ error: "Friend ID tidak valid." });
+    }
+
+    db.run(`DELETE FROM friends WHERE user_id = ? AND friend_id = ?`, [req.user.id, friendId], function(err) {
+        if (err) return res.status(500).json({ error: "Gagal menghapus teman." });
+        res.json({ message: "Teman berhasil dihapus." });
+    });
+});
+
 // 5. Leaderboard
 app.get('/api/leaderboard', (req, res) => {
     const allowedSubjects = ['matematika', 'fisika', 'informatika', 'bahasainggris', 'all'];

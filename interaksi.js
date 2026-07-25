@@ -328,24 +328,13 @@ function masukHalamanUtama(){
 // ======================
 
 function loadProfile() {
-
-    const name =
-    localStorage.getItem("name") || "Guest User";
-
-    const username =
-    localStorage.getItem("username") || "guest";
-
-    const bio =
-    localStorage.getItem("bio") || "Bio belum diisi";
-
-    const country =
-    localStorage.getItem("country") || "Belum diisi";
-
-    const rank =
-    localStorage.getItem("rank") || "Bronze";
-
-    const avatar =
-    localStorage.getItem("avatar");
+    const profile = getCurrentProfileState();
+    const name = profile.name || "Guest User";
+    const username = profile.username || "guest";
+    const bio = profile.bio || "";
+    const country = profile.country || "";
+    const rank = localStorage.getItem("rank") || "Bronze";
+    const avatar = profile.avatar;
 
     // navbar
     const navName = document.getElementById("navProfileName");
@@ -353,6 +342,17 @@ function loadProfile() {
 
     if(navName) navName.innerText = name;
     if(navRank) navRank.innerText = rank;
+
+    const heroProfileName = document.getElementById("heroProfileName");
+    const heroProfileMatches = document.getElementById("heroProfileMatches");
+    const heroProfileWinrate = document.getElementById("heroProfileWinrate");
+    const totalMatches = Number(profile.matches) || 0;
+    const totalWins = Number(profile.wins) || 0;
+    const winrate = totalMatches ? Math.round((totalWins / totalMatches) * 100) : 0;
+
+    if(heroProfileName) heroProfileName.innerText = name;
+    if(heroProfileMatches) heroProfileMatches.innerText = totalMatches.toLocaleString();
+    if(heroProfileWinrate) heroProfileWinrate.innerText = `${winrate}%`;
 
     // profile
     const pName = document.getElementById("profileName");
@@ -375,6 +375,8 @@ function loadProfile() {
         if(navImg) navImg.src = avatar;
         if(previewImg) previewImg.src = avatar;
     }
+
+    updateRankBadges();
 }
 
 // ======================
@@ -1946,6 +1948,8 @@ const SUBJECTS = [
     { key:"informatika", label:"Informatika", icon:"fa-laptop-code", seed:760 }
 ];
 
+let serverProfileCache = null;
+
 const RANK_TIERS = [
     { name:"Bronze", min:1, max:100, class:"rank-bronze", icon:"fa-medal", reward:"Bronze avatar frame", desc:"Tahap awal untuk membangun ritme latihan dan konsistensi dasar." },
     { name:"Silver", min:101, max:300, class:"rank-silver", icon:"fa-medal", reward:"Silver study badge", desc:"Pemahaman mulai stabil dan kamu sudah punya fondasi kompetitif." },
@@ -1976,6 +1980,10 @@ function getRankProgress(elo) {
 
 function getSubjectELO(subjectKey) {
     const subject = SUBJECTS.find(item => item.key === subjectKey) || SUBJECTS[0];
+    const serverValue = serverProfileCache && Number.isFinite(Number(serverProfileCache[`elo_${subject.key}`]))
+        ? Number(serverProfileCache[`elo_${subject.key}`])
+        : null;
+    if(serverValue !== null) return serverValue;
     return parseInt(localStorage.getItem(`elo_${subject.key}`) || subject.seed);
 }
 
@@ -1985,6 +1993,28 @@ function setSubjectELO(subjectKey, elo) {
 
 function getTotalSubjectELO() {
     return SUBJECTS.reduce((total, subject) => total + getSubjectELO(subject.key), 0);
+}
+
+function getCurrentProfileState() {
+    const profile = serverProfileCache || {};
+    return {
+        name: profile.name || localStorage.getItem("name") || "",
+        username: profile.username || localStorage.getItem("username") || "",
+        bio: profile.bio || localStorage.getItem("bio") || "",
+        country: profile.country || localStorage.getItem("country") || "",
+        province: profile.province || localStorage.getItem("province") || "-",
+        city: profile.city || localStorage.getItem("city") || "-",
+        school: profile.school || localStorage.getItem("school") || "-",
+        class_level: profile.class_level || localStorage.getItem("class_level") || "-",
+        avatar: profile.avatar || localStorage.getItem("avatar") || "https://i.pravatar.cc/100?img=12",
+        exp: Number.isFinite(Number(profile.exp)) ? Number(profile.exp) : 0,
+        matches: Number.isFinite(Number(profile.matches)) ? Number(profile.matches) : 0,
+        wins: Number.isFinite(Number(profile.wins)) ? Number(profile.wins) : 0,
+        elo_matematika: Number.isFinite(Number(profile.elo_matematika)) ? Number(profile.elo_matematika) : 0,
+        elo_fisika: Number.isFinite(Number(profile.elo_fisika)) ? Number(profile.elo_fisika) : 0,
+        elo_bahasainggris: Number.isFinite(Number(profile.elo_bahasainggris)) ? Number(profile.elo_bahasainggris) : 0,
+        elo_informatika: Number.isFinite(Number(profile.elo_informatika)) ? Number(profile.elo_informatika) : 0
+    };
 }
 
 function getPrimarySubjectKey() {
@@ -1998,7 +2028,8 @@ function setPrimarySubjectKey(subjectKey) {
 function updateRankBadges(subjectKey = getPrimarySubjectKey()) {
     const subject = SUBJECTS.find(item => item.key === subjectKey) || SUBJECTS[0];
     setPrimarySubjectKey(subject.key);
-    let elo = getSubjectELO(subject.key);
+    const profile = getCurrentProfileState();
+    let elo = Number.isFinite(Number(profile[`elo_${subject.key}`])) ? Number(profile[`elo_${subject.key}`]) : getSubjectELO(subject.key);
     let rankData = getRankFromELO(elo);
     let progressData = getRankProgress(elo);
 
@@ -2022,6 +2053,9 @@ function updateRankBadges(subjectKey = getPrimarySubjectKey()) {
 
     const heroRankTitle = document.getElementById("heroRankTitle");
     if(heroRankTitle) heroRankTitle.innerText = `${subject.label} Rank`;
+
+    const heroRankElo = document.getElementById("heroRankElo");
+    if(heroRankElo) heroRankElo.innerText = `${elo.toLocaleString()} ELO`;
 
     const heroRankProgress = document.getElementById("heroRankProgress");
     if(heroRankProgress) {
@@ -2049,6 +2083,23 @@ function updateRankBadges(subjectKey = getPrimarySubjectKey()) {
                 </button>
             `;
         }).join("");
+    }
+}
+
+async function fetchAndCacheProfile() {
+    const token = localStorage.getItem("edurank_token");
+    if(!token) return null;
+    try {
+        const res = await fetch(getApiUrl('/api/profile'), {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        if(!res.ok) return null;
+        const data = await res.json();
+        serverProfileCache = data;
+        return data;
+    } catch (error) {
+        console.error("Failed to fetch profile from backend:", error);
+        return null;
     }
 }
 
@@ -2439,6 +2490,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     initAuthGate();
+    initFriendsSection();
     syncProfileWithServer();
     checkBanStatus();
 });
@@ -2785,6 +2837,19 @@ function initLearningStyleQuiz(){
     }
 }
 
+function initFriendsSection(){
+    const form = document.getElementById("friendsForm");
+    const input = document.getElementById("friendUsernameInput");
+    if(!form || form.dataset.ready === "true") return;
+
+    form.dataset.ready = "true";
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await addFriendByUsername(input ? input.value : "");
+        if(input) input.value = "";
+    });
+}
+
 function startLearningStyleQuiz(){
     const authGate = document.getElementById("authGate");
     const learningQuiz = document.getElementById("learningQuiz");
@@ -2981,6 +3046,7 @@ async function syncProfileWithServer() {
         });
         if (res.ok) {
             const data = await res.json();
+            serverProfileCache = data;
             localStorage.setItem("name", data.name || "Guest User");
             localStorage.setItem("username", data.username || "-");
             localStorage.setItem("bio", data.bio || "");
@@ -2991,10 +3057,124 @@ async function syncProfileWithServer() {
             localStorage.setItem("class_level", data.class_level || "-");
             if (data.avatar) localStorage.setItem("avatar", data.avatar);
             loadProfile();
+            if (document.getElementById("friendsList")) {
+                refreshFriendsList();
+            }
         }
     } catch(e) {
         console.error("Failed to sync profile:", e);
     }
+}
+
+async function refreshFriendsList() {
+    const list = document.getElementById("friendsList");
+    const summary = document.getElementById("friendsSummary");
+    if (!list || !summary) return;
+
+    const token = localStorage.getItem("edurank_token");
+    if (!token) {
+        list.innerHTML = "";
+        summary.innerText = "Login dulu untuk mengelola teman.";
+        return;
+    }
+
+    try {
+        const res = await fetch(getApiUrl('/api/friends'), {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const friends = res.ok ? await res.json() : [];
+        if (!Array.isArray(friends) || friends.length === 0) {
+            list.innerHTML = "";
+            summary.innerText = "Belum ada teman yang ditambahkan.";
+            return;
+        }
+
+        summary.innerText = `${friends.length} teman tersimpan di Railway.`;
+        list.innerHTML = friends.map(friend => {
+            const elo = Number(friend.total_elo) || 0;
+            const match = Number(friend.matches) || 0;
+            const winrate = match ? Math.round(((Number(friend.wins) || 0) / match) * 100) : 0;
+            const avatar = friend.avatar || "https://i.pravatar.cc/100?img=12";
+            return `
+                <article class="friend-card">
+                    <div class="friend-card-top">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <img src="${avatar}" alt="${friend.name || friend.username || 'Friend'}" style="width:52px; height:52px; border-radius:16px; object-fit:cover;" />
+                            <div>
+                                <strong>${friend.name || friend.username || 'Teman'}</strong>
+                                <span style="color:var(--text-light); font-size:0.85rem;">@${friend.username || '-'}</span>
+                            </div>
+                        </div>
+                        <button class="secondary-btn" type="button" onclick="removeFriend(${Number(friend.friend_user_id || friend.friend_id)})">Hapus</button>
+                    </div>
+                    <div class="friend-card-meta">
+                        <span>ELO ${elo.toLocaleString()}</span>
+                        <span>Match ${match.toLocaleString()}</span>
+                        <span>Winrate ${winrate}%</span>
+                    </div>
+                    <div class="friend-card-meta">
+                        <span>${friend.city || '-'}</span>
+                        <span>${friend.school || '-'}</span>
+                        <span>${friend.class_level || '-'}</span>
+                    </div>
+                </article>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Failed to load friends:", error);
+        summary.innerText = "Gagal memuat teman dari server.";
+    }
+}
+
+async function addFriendByUsername(username) {
+    const token = localStorage.getItem("edurank_token");
+    if (!token) {
+        showCustomAlert("Login dulu untuk menambah teman.", "error");
+        return;
+    }
+
+    const trimmed = String(username || '').trim().replace(/^@/, '');
+    if (!trimmed) {
+        showCustomAlert("Masukkan username teman.", "error");
+        return;
+    }
+
+    const res = await fetch(getApiUrl('/api/friends'), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ username: trimmed })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        showCustomAlert(data.error || "Gagal menambahkan teman.", "error");
+        return;
+    }
+
+    showCustomAlert(data.message || "Teman berhasil ditambahkan.", "success");
+    refreshFriendsList();
+}
+
+async function removeFriend(friendId) {
+    const token = localStorage.getItem("edurank_token");
+    if (!token) return;
+
+    const res = await fetch(getApiUrl(`/api/friends/${friendId}`), {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        showCustomAlert(data.error || "Gagal menghapus teman.", "error");
+        return;
+    }
+
+    showCustomAlert(data.message || "Teman dihapus.", "success");
+    refreshFriendsList();
 }
 
 async function checkBanStatus() {
