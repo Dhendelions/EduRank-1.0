@@ -166,7 +166,7 @@ function mulaiTes(){
 
             localStorage.setItem(
                 "bio",
-                "Bio belum diisi"
+                ""
             );
         }
 
@@ -174,7 +174,7 @@ function mulaiTes(){
 
             localStorage.setItem(
                 "country",
-                "Belum diisi"
+                ""
             );
         }
 
@@ -182,7 +182,7 @@ function mulaiTes(){
 
             localStorage.setItem(
                 "rank",
-                "Beginner Rank"
+                ""
             );
         }
 
@@ -2733,9 +2733,9 @@ function saveAuthUser(user){
     localStorage.setItem("school", "-");
     localStorage.setItem("class_level", "-");
 
-    if(!localStorage.getItem("bio")) localStorage.setItem("bio", "Bio belum diisi");
-    if(!localStorage.getItem("country")) localStorage.setItem("country", "Indonesia");
-    if(!localStorage.getItem("rank")) localStorage.setItem("rank", "Bronze");
+    if(!localStorage.getItem("bio")) localStorage.setItem("bio", "");
+    if(!localStorage.getItem("country")) localStorage.setItem("country", "");
+    if(!localStorage.getItem("rank")) localStorage.setItem("rank", "");
 }
 
 function unlockEduRank(showMessage){
@@ -2984,7 +2984,7 @@ async function syncProfileWithServer() {
             localStorage.setItem("name", data.name || "Guest User");
             localStorage.setItem("username", data.username || "-");
             localStorage.setItem("bio", data.bio || "");
-            localStorage.setItem("country", data.country || "Indonesia");
+            localStorage.setItem("country", data.country || "");
             localStorage.setItem("province", data.province || "-");
             localStorage.setItem("city", data.city || "-");
             localStorage.setItem("school", data.school || "-");

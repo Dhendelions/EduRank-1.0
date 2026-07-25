@@ -94,15 +94,15 @@
             </div>
             <div>
               <span class="profile-kicker">Competitive Learner</span>
-              <h1 id="profileName">Siswa Teladan</h1>
-              <p id="profileUsername">@siswa</p>
-              <p class="profile-bio" id="profileBio">Saya suka belajar hal baru.</p>
+              <h1 id="profileName"></h1>
+              <p id="profileUsername"></p>
+              <p class="profile-bio" id="profileBio"></p>
               <div class="profile-sync-indicator">
                 <span class="pulse-dot"></span>
                 <span>Data diperbarui otomatis dari database Developer</span>
               </div>
               <div class="profile-meta-row" style="flex-wrap: wrap; gap: 10px 20px;">
-                <span><i class="fa-solid fa-flag"></i> <span id="profileCountry">Indonesia</span></span>
+                <span><i class="fa-solid fa-flag"></i> <span id="profileCountry">-</span></span>
                 <span><i class="fa-solid fa-map-location-dot"></i> Provinsi: <span id="profileProvince">-</span><span id="badgeProvince" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
                 <span><i class="fa-solid fa-city"></i> Kota: <span id="profileCity">-</span><span id="badgeCity" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
                 <span><i class="fa-solid fa-school"></i> Sekolah: <span id="profileSchool">-</span><span id="badgeSchool" class="verify-badge unverified">⏳ Menunggu verifikasi</span></span>
@@ -245,16 +245,17 @@
       if (!data) return; // Not logged in or server error
       currentProfileData = data;
 
-      const exp = data.exp || 0;
+      const safeNumber = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+      const exp = safeNumber(data.exp);
       const level = getAccountLevel(exp);
-      const totalMatches = data.matches || 0;
-      const totalWins = data.wins || 0;
+      const totalMatches = safeNumber(data.matches);
+      const totalWins = safeNumber(data.wins);
       const winrate = totalMatches ? Math.round((totalWins / totalMatches) * 100) : 0;
 
-      document.getElementById("profileName").innerText = data.name;
-      document.getElementById("profileUsername").innerText = "@" + data.username;
-      document.getElementById("profileBio").innerText = data.bio || "Saya suka belajar hal baru.";
-      document.getElementById("profileCountry").innerText = data.country || "Indonesia";
+      document.getElementById("profileName").innerText = data.name || "";
+      document.getElementById("profileUsername").innerText = data.username ? "@" + data.username : "";
+      document.getElementById("profileBio").innerText = data.bio || "";
+      document.getElementById("profileCountry").innerText = data.country || "-";
       document.getElementById("profileProvince").innerText = data.province || "-";
       document.getElementById("profileCity").innerText = data.city || "-";
       document.getElementById("profileClass").innerText = data.class_level || "-";
@@ -267,16 +268,16 @@
       document.getElementById("accountExpFill").style.width = level.percent + "%";
       document.getElementById("accountExpText").innerText = `${level.current} / ${level.next} EXP`;
       
-      const totalElo = (data.elo_matematika||420) + (data.elo_fisika||228) + (data.elo_bahasainggris||170) + (data.elo_informatika||760);
+      const totalElo = safeNumber(data.elo_matematika) + safeNumber(data.elo_fisika) + safeNumber(data.elo_bahasainggris) + safeNumber(data.elo_informatika);
       document.getElementById("profileTotalELO").innerText = totalElo.toLocaleString();
       document.getElementById("profileMatches").innerText = totalMatches.toLocaleString();
       document.getElementById("profileWinrate").innerText = winrate + "%";
 
       document.getElementById("profileSubjectRanks").innerHTML = SUBJECTS.map(subject => {
-        const elo = data['elo_' + subject.key.replace('-', '')] || 0; // Handle keys
+        const elo = safeNumber(data['elo_' + subject.key.replace('-', '')]); // Handle keys
         const rank = getRankFromELO(elo);
         const progress = getRankProgress(elo);
-        const highest = data['highest_' + subject.key.replace('-', '')] || rank.name;
+        const highest = data['highest_' + subject.key.replace('-', '')] || "0";
         return `
           <button class="rank-subject-card" onclick="showRankInfoModal('${subject.key}')">
             <div class="rank-subject-main">

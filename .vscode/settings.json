@@ -15,6 +15,22 @@
             "username": "root",
             "password": "Crissencio101208!",
             "connectionTimeout": 30
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "sakura.proxy.rlwy.net",
+            "port": 30336,
+            "driver": "MySQL",
+            "name": "railway",
+            "database": "railway",
+            "username": "root",
+            "password": "PUOoVqjyRBrrptNDvUpzFodpzfXMblBn",
+            "connectionTimeout": 30
         }
     ]
 }
