@@ -249,12 +249,11 @@
   <script src="questions.js"></script>
   <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
   <script>
-    const gameMode = localStorage.getItem("gameMode") || "ranked";
+    const gameMode = String(localStorage.getItem("gameMode") || "ranked").toLowerCase();
     const gameParam = localStorage.getItem("gameParam") || "campuran";
-    const selectedSubject = localStorage.getItem("selectedSubject") || gameParam || "campuran";
-    const roomCode = gameMode === 'friend'
-        ? (String(gameParam || '').trim() || String(localStorage.getItem('roomCode') || '').trim())
-        : '';
+    const selectedSubject = (localStorage.getItem("selectedSubject") || gameParam || "campuran").toLowerCase();
+    const normalizedRoomCode = String(gameParam || localStorage.getItem('roomCode') || '').trim().toUpperCase();
+    const roomCode = gameMode === 'friend' ? normalizedRoomCode : '';
     let friendRoomSettings = {};
     try {
         friendRoomSettings = JSON.parse(localStorage.getItem('friendRoomSettings') || '{}');
@@ -268,7 +267,10 @@
         window.location.href = "index.html";
     }
 
-    const socket = io(window.EduRankConfig && typeof window.EduRankConfig.getSocketUrl === 'function' ? window.EduRankConfig.getSocketUrl() : window.location.origin, {
+    const socketBase = window.EduRankConfig && typeof window.EduRankConfig.getSocketUrl === 'function'
+        ? window.EduRankConfig.getSocketUrl()
+        : window.location.origin;
+    const socket = io(socketBase, {
         auth: { token },
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -349,14 +351,19 @@
     }
 
     socket.on('connect', () => {
-        const subjectToQueue = selectedSubject === 'campuran' ? 'campuran' : selectedSubject;
-        setBattleStatus('Menghubungkan ke antrean...', 'info');
-        socket.emit('joinMatchmaking', {
+        const subjectToQueue = gameMode === 'friend'
+            ? 'campuran'
+            : (['matematika', 'fisika', 'bahasainggris', 'informatika', 'campuran'].includes(selectedSubject) ? selectedSubject : 'matematika');
+        const payload = {
             mode: gameMode,
-            subject: subjectToQueue,
-            roomCode,
-            settings: gameMode === 'friend' ? friendRoomSettings : undefined
-        });
+            subject: subjectToQueue
+        };
+        if(gameMode === 'friend') {
+            payload.roomCode = roomCode;
+            payload.settings = friendRoomSettings && typeof friendRoomSettings === 'object' ? friendRoomSettings : undefined;
+        }
+        setBattleStatus('Menghubungkan ke antrean...', 'info');
+        socket.emit('joinMatchmaking', payload);
         document.getElementById('qText').innerText = 'Mencari lawan...';
     });
 
@@ -504,16 +511,19 @@
         setBattleStatus('Jawaban dikirim...', 'info');
     }
 
+    window.addEventListener('beforeunload', () => {
+        if(socket && socket.connected) {
+            socket.emit('leaveMatchmaking', { mode: gameMode, roomCode });
+        }
+        socket.disconnect();
+    });
+
     function confirmExit() {
         showCustomConfirm('Yakin ingin keluar? Proses match akan dianggap kalah.', () => {
             socket.disconnect();
             navigateWithTransition('index.html?view=main#ranked');
         });
     }
-
-    window.addEventListener('beforeunload', () => {
-        socket.disconnect();
-    });
 
     updateProgressBar();
     renderCountdown();

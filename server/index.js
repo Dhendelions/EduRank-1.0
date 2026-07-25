@@ -488,7 +488,8 @@ function normalizeMatchSettings(settings) {
 
 function validateMatchPayload(payload) {
     const mode = payload && typeof payload.mode === 'string' ? payload.mode.toLowerCase() : '';
-    const subject = normalizeSubject(payload && typeof payload.subject === 'string' ? payload.subject.toLowerCase() : '');
+    const rawSubject = payload && typeof payload.subject === 'string' ? payload.subject.toLowerCase() : '';
+    const subject = normalizeSubject(rawSubject || (mode === 'friend' ? 'campuran' : 'matematika'));
     const roomCode = normalizeRoomCode(payload && payload.roomCode);
     const settings = normalizeMatchSettings(payload && payload.settings);
 
@@ -552,21 +553,26 @@ io.on('connection', (socket) => {
         const eloSubject = getEloSubject(subject);
         const roomCode = validation.roomCode || 'GLOBAL';
         const settings = validation.settings || { questionCount: 5, timeLimitSeconds: 300 };
-        console.log(`User ${socket.user.email} joined matchmaking for ${mode} ${subject}${mode === 'friend' ? ` room=${roomCode}` : ''}`);
-        
         const queue = waitingPlayers[mode];
-        if (!queue) return;
-        
-        const existingIndex = queue.findIndex(p => p.id === socket.user.id && p.roomCode === roomCode);
+        if (!queue) {
+            socket.emit('matchError', { reason: 'INVALID_MODE' });
+            return;
+        }
+
+        console.log(`User ${socket.user.email} joined matchmaking for ${mode} ${subject}${mode === 'friend' ? ` room=${roomCode}` : ''}`);
+
+        // Remove stale entries for this socket or this user before re-joining.
+        waitingPlayers[mode] = queue.filter((p) => p.socketId !== socket.id && p.id !== socket.user.id);
+        const activeQueue = waitingPlayers[mode];
+        const existingIndex = activeQueue.findIndex(p => p.id === socket.user.id && p.roomCode === roomCode);
         if (existingIndex !== -1) return;
         
         const player = { socketId: socket.id, id: socket.user.id, subject, roomCode, settings };
-        
-        const matchIndex = queue.findIndex(p => p.subject === subject && p.roomCode === roomCode);
+        const matchIndex = activeQueue.findIndex(p => p.subject === subject && p.roomCode === roomCode);
         
         if (matchIndex !== -1) {
             // Match found!
-            const opponent = queue.splice(matchIndex, 1)[0];
+            const opponent = activeQueue.splice(matchIndex, 1)[0];
             const roomId = 'room_' + Math.random().toString(36).substr(2, 9);
             
             // Get user details for both
@@ -625,7 +631,8 @@ io.on('connection', (socket) => {
             
         } else {
             // Add to queue
-            queue.push(player);
+            activeQueue.push(player);
+            waitingPlayers[mode] = activeQueue;
             socket.emit('waitingForMatch');
         }
     });
