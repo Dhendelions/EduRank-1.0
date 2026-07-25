@@ -712,17 +712,10 @@
 
     <section class="friends-section" id="friends">
       <div class="container">
-        <div class="section-title">
-          <h2>Teman Belajar</h2>
-          <p>
-            Tambahkan teman untuk menyusun daftar lawan atau partner belajar yang tersimpan di database Railway.
-          </p>
-        </div>
-
         <div class="friends-panel">
           <div class="friends-panel-head">
             <div>
-              <h3>Daftar Teman</h3>
+              <h3>Teman Belajar</h3>
               <p id="friendsSummary">Belum ada teman yang ditambahkan.</p>
             </div>
             <button class="primary-btn" type="button" onclick="refreshFriendsList()">
@@ -736,6 +729,23 @@
           </form>
 
           <div class="friends-list" id="friendsList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="history-section" id="battleHistory">
+      <div class="container">
+        <div class="history-panel">
+          <div class="friends-panel-head">
+            <div>
+              <h3>Battle History</h3>
+              <p id="historySummary">Belum ada battle history.</p>
+            </div>
+            <button class="primary-btn" type="button" onclick="refreshBattleHistory()">
+              <i class="fa-solid fa-rotate"></i> Muat Ulang
+            </button>
+          </div>
+          <div class="history-list" id="battleHistoryList"></div>
         </div>
       </div>
     </section>

@@ -2492,6 +2492,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initAuthGate();
     initFriendsSection();
     syncProfileWithServer();
+    refreshBattleHistory();
     checkBanStatus();
 });
 
@@ -3123,6 +3124,59 @@ async function refreshFriendsList() {
     } catch (error) {
         console.error("Failed to load friends:", error);
         summary.innerText = "Gagal memuat teman dari server.";
+    }
+}
+
+async function refreshBattleHistory() {
+    const list = document.getElementById("battleHistoryList");
+    const summary = document.getElementById("historySummary");
+    if (!list || !summary) return;
+
+    const token = localStorage.getItem("edurank_token");
+    if (!token) {
+        list.innerHTML = "";
+        summary.innerText = "Login dulu untuk melihat history battle.";
+        return;
+    }
+
+    try {
+        const res = await fetch(getApiUrl('/api/battle-history'), {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const history = res.ok ? await res.json() : [];
+        if (!Array.isArray(history) || history.length === 0) {
+            list.innerHTML = "";
+            summary.innerText = "Belum ada battle history.";
+            return;
+        }
+
+        summary.innerText = `${history.length} riwayat battle terakhir.`;
+        list.innerHTML = history.map(item => {
+            const isWin = Number(item.is_win) === 1;
+            const badgeClass = isWin ? "win" : "loss";
+            const badgeText = isWin ? "Win" : "Loss";
+            const eloChange = Number(item.elo_change) || 0;
+            const createdAt = item.created_at ? new Date(item.created_at).toLocaleString("id-ID") : "-";
+            return `
+                <article class="history-card">
+                    <div class="history-card-top">
+                        <div>
+                            <strong>${item.subject || "Battle"}</strong>
+                            <div style="color:var(--text-light); font-size:0.88rem;">vs ${item.opponent_name || "-"}</div>
+                        </div>
+                        <span class="history-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="history-meta">
+                        <span>Mode ${item.mode || "-"}</span>
+                        <span>ELO ${eloChange >= 0 ? "+" : ""}${eloChange}</span>
+                        <span>${createdAt}</span>
+                    </div>
+                </article>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Failed to load battle history:", error);
+        summary.innerText = "Gagal memuat battle history.";
     }
 }
 

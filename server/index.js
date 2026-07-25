@@ -385,6 +385,19 @@ app.get('/api/leaderboard', (req, res) => {
     }
 });
 
+app.get('/api/battle-history', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT id, opponent_name, subject, mode, is_win, elo_change, created_at
+        FROM match_history
+        WHERE user_id = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 20
+    `, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(rows || []);
+    });
+});
+
 // --- DEVELOPER ADMIN API ---
 
 // 1. Get all players
@@ -776,6 +789,23 @@ io.on('connection', (socket) => {
             eloChange: p2ELO.gained,
             newElo: p2ELO.newTotal,
             timeTaken: room.p2.timeTaken
+        });
+
+        const createdAt = new Date().toISOString();
+        [
+            [room.p1.id, room.p2.name, room.subject, room.mode, p1Win === true ? 1 : 0, p1ELO.gained, createdAt],
+            [room.p2.id, room.p1.name, room.subject, room.mode, p2Win === true ? 1 : 0, p2ELO.gained, createdAt]
+        ].forEach((row) => {
+            db.run(
+                `INSERT INTO match_history (user_id, opponent_name, subject, mode, is_win, elo_change, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                row,
+                (err) => {
+                    if (err) {
+                        console.error('[MYSQL-ERROR] Failed to write match history:', err.message);
+                    }
+                }
+            );
         });
         
         delete activeRooms[roomId];
