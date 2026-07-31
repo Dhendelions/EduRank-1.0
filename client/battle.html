@@ -269,7 +269,7 @@
 
     const socketBase = window.EduRankConfig && typeof window.EduRankConfig.getSocketUrl === 'function'
         ? window.EduRankConfig.getSocketUrl()
-        : window.location.origin;
+        : '';
     const socket = io(socketBase, {
         auth: { token },
         transports: ['websocket', 'polling'],
