@@ -104,6 +104,14 @@ app.get('/health/db', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        service: 'edurank-backend',
+        websocket: 'socket.io-enabled'
+    });
+});
+
 app.post('/api/feedback', (req, res) => {
     const name = String(req.body?.name || '').trim().slice(0, 80);
     const email = String(req.body?.email || '').trim().toLowerCase().slice(0, 120);
@@ -890,6 +898,36 @@ function startServer(options = {}) {
         console.log(`[ANTI-CHEAT] System active: Speed detection, Rate limiting, Session dedup, Input validation`);
     });
 }
+
+function shutdown(signal) {
+    console.log(`[SHUTDOWN] Received ${signal}, closing HTTP server and database pool...`);
+    server.close(() => {
+        try {
+            db.close();
+        } catch (error) {
+            console.error('[SHUTDOWN] Failed to close database pool:', error.message);
+        }
+        console.log('[SHUTDOWN] Graceful shutdown complete.');
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error('[SHUTDOWN] Force exit after timeout.');
+        process.exit(1);
+    }, 10_000).unref();
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
+
+process.on('uncaughtException', (error) => {
+    console.error('[FATAL] uncaughtException:', error);
+    shutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[FATAL] unhandledRejection:', reason);
+});
 
 if (require.main === module) {
     startServer(process.env);
