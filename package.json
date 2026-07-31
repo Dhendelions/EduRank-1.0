@@ -1,12 +1,7 @@
 {
-  "name": "edurank",
-  "private": true,
-  "workspaces": ["server"],
-  "scripts": {
-    "start": "npm --prefix server start",
-    "test": "npm --prefix server test"
-  },
-  "engines": {
-    "node": ">=20.17.0"
-  }
+    "name": "edurank",
+    "private": true,
+    "engines": {
+        "node": ">=20.17.0"
+    }
 }
