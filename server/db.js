@@ -1,103 +1,43 @@
 const mysql = require('mysql2');
 const path = require('path');
 
-// Hanya load .env jika BUKAN di Railway
-if (!process.env.RAILWAY_ENVIRONMENT) {
+// Jangan load .env lokal jika berjalan di environment production (Railway)
+if (process.env.NODE_ENV !== 'production' && !process.env.RAILWAY_ENVIRONMENT) {
     require('dotenv').config({ path: path.resolve(__dirname, '.env') });
     require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 }
 
-function parsePort(value, fallback) {
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? fallback : parsed;
-}
+// Prioritaskan Environment Variables dari Railway
+const host = process.env.MYSQLHOST || process.env.RAILWAY_MYSQL_HOST || process.env.DB_HOST;
+const user = process.env.MYSQLUSER || process.env.RAILWAY_MYSQL_USER || process.env.DB_USER;
+const password = process.env.MYSQLPASSWORD || process.env.RAILWAY_MYSQL_PASSWORD || process.env.DB_PASSWORD;
+const database = process.env.MYSQLDATABASE || process.env.RAILWAY_MYSQL_DATABASE || process.env.DB_NAME;
+const port = process.env.MYSQLPORT || process.env.RAILWAY_MYSQL_PORT || process.env.DB_PORT || 3306;
 
-function parseMysqlUrl(rawUrl) {
-    if (!rawUrl) return {};
-    try {
-        const url = new URL(rawUrl);
-        return {
-            host: url.hostname,
-            user: decodeURIComponent(url.username || ''),
-            password: decodeURIComponent(url.password || ''),
-            database: url.pathname ? decodeURIComponent(url.pathname.replace(/^\//, '')) : '',
-            port: url.port ? parsePort(url.port, 3306) : 3306
-        };
-    } catch (error) {
-        return {};
-    }
-}
+console.log("\n===== MYSQL CONFIG =====");
+console.log(`Host: ${host}`);
+console.log(`User: ${user}`);
+console.log(`Database: ${database}`);
+console.log(`Port: ${port}`);
+console.log("========================\n");
 
-const directConfig = {
-    host:
-        process.env.MYSQLHOST ||
-        process.env.RAILWAY_MYSQL_HOST ||
-        process.env.DB_HOST,
-
-    user:
-        process.env.MYSQLUSER ||
-        process.env.RAILWAY_MYSQL_USER ||
-        process.env.DB_USER,
-
-    password:
-        process.env.MYSQLPASSWORD ||
-        process.env.RAILWAY_MYSQL_PASSWORD ||
-        process.env.DB_PASSWORD,
-
-    database:
-        process.env.MYSQLDATABASE ||
-        process.env.RAILWAY_MYSQL_DATABASE ||
-        process.env.DB_NAME,
-
-    port:
-        process.env.MYSQLPORT ||
-        process.env.RAILWAY_MYSQL_PORT ||
-        process.env.DB_PORT
-};
-
-const urlConfig = parseMysqlUrl(process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQLURL);
-
-const resolvedHost = directConfig.host || urlConfig.host;
-const resolvedUser = directConfig.user || urlConfig.user;
-const resolvedPassword = directConfig.password || urlConfig.password;
-const resolvedDatabase = directConfig.database || urlConfig.database;
-const resolvedPort = directConfig.port || urlConfig.port;
-
-console.log("===== MYSQL DEBUG =====");
-console.log({
-    NODE_ENV: process.env.NODE_ENV,
-    DB_HOST: process.env.DB_HOST,
-    DB_USER: process.env.DB_USER,
-    DB_NAME: process.env.DB_NAME,
-    MYSQLHOST: process.env.MYSQLHOST,
-    MYSQLUSER: process.env.MYSQLUSER,
-    MYSQLDATABASE: process.env.MYSQLDATABASE,
-    DATABASE_URL: process.env.DATABASE_URL ? "SET" : "NOT SET"
-});
-
-if (process.env.NODE_ENV === 'production' &&
-    (!resolvedHost || !resolvedUser || !resolvedDatabase)) {
-
-    console.error("resolvedHost =", resolvedHost);
-    console.error("resolvedUser =", resolvedUser);
-    console.error("resolvedDatabase =", resolvedDatabase);
-
+if (process.env.NODE_ENV === 'production' && (!host || !user || !database)) {
+    console.error("[MYSQL-ERROR] Konfigurasi database tidak lengkap untuk mode production!");
+    console.error(`Host: ${host || 'MISSING'}`);
+    console.error(`User: ${user || 'MISSING'}`);
+    console.error(`Database: ${database || 'MISSING'}`);
     process.exit(1);
 }
 
 const pool = mysql.createPool({
-    host: resolvedHost || 'localhost',
-    user: resolvedUser || 'root',
-    password: resolvedPassword || '',
-    database: resolvedDatabase || 'railway',
-    port: parsePort(resolvedPort, 3306),
-    multipleStatements: false,
+    host: host,
+    user: user,
+    password: password,
+    database: database,
+    port: Number(port),
     waitForConnections: true,
     connectionLimit: 20,
-    queueLimit: 100,
-    connectTimeout: 10_000,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+    queueLimit: 100
 });
 
 // Test connection on startup
@@ -106,11 +46,11 @@ pool.getConnection((err, connection) => {
         console.error('\n================================================================');
         console.error('[MYSQL-ERROR] Gagal terhubung ke database MySQL!');
         console.error(`Pesan Error: ${err.message}`);
-        console.error(`[MYSQL-ERROR] Config snapshot host=${resolvedHost || 'MISSING'} user=${resolvedUser ? 'SET' : 'MISSING'} db=${resolvedDatabase || 'MISSING'} port=${resolvedPort || '3306'}`);
+        console.error(`[MYSQL-ERROR] Config snapshot host=${host || 'MISSING'} user=${user ? 'SET' : 'MISSING'} db=${database || 'MISSING'} port=${port}`);
         console.error('Silakan pastikan:');
         console.error('1. Server MySQL Anda sudah berjalan (running)');
-        console.error('2. Database "railway" sudah dibuat dan `DB_NAME=railway` sudah diset');
-        console.error('3. Kredensial di file server/.env sudah sesuai');
+        console.error('2. Database sudah dibuat');
+        console.error('3. Kredensial Environment Variables (MYSQLHOST, MYSQLUSER, dll) sudah sesuai');
         console.error('================================================================\n');
         return;
     }
