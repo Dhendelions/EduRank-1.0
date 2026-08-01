@@ -63,8 +63,26 @@ const resolvedPassword = directConfig.password || urlConfig.password;
 const resolvedDatabase = directConfig.database || urlConfig.database;
 const resolvedPort = directConfig.port || urlConfig.port;
 
-if (process.env.NODE_ENV === 'production' && (!resolvedHost || !resolvedUser || !resolvedDatabase)) {
-    throw new Error('MySQL environment variables are required in production. Set DB_* , MYSQL* , or DATABASE_URL / MYSQL_URL from Railway.');
+console.log("===== MYSQL DEBUG =====");
+console.log({
+    NODE_ENV: process.env.NODE_ENV,
+    DB_HOST: process.env.DB_HOST,
+    DB_USER: process.env.DB_USER,
+    DB_NAME: process.env.DB_NAME,
+    MYSQLHOST: process.env.MYSQLHOST,
+    MYSQLUSER: process.env.MYSQLUSER,
+    MYSQLDATABASE: process.env.MYSQLDATABASE,
+    DATABASE_URL: process.env.DATABASE_URL ? "SET" : "NOT SET"
+});
+
+if (process.env.NODE_ENV === 'production' &&
+    (!resolvedHost || !resolvedUser || !resolvedDatabase)) {
+
+    console.error("resolvedHost =", resolvedHost);
+    console.error("resolvedUser =", resolvedUser);
+    console.error("resolvedDatabase =", resolvedDatabase);
+
+    process.exit(1);
 }
 
 const pool = mysql.createPool({
