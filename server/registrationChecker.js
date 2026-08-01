@@ -54,22 +54,22 @@ function validateRegistration({ name, email, password, birthDate, studentPhoto, 
         return { valid: false, error: "Foto wajah bersama kartu pelajar wajib diambil atau diunggah." };
     }
 
-    // 6. Validate image format and size (base64 string check)
-    // Accept standard image data URL: data:image/(png|jpeg|jpg|webp|gif);base64,
-    const imagePattern = /^data:image\/(png|jpe?g|webp|gif);base64,/i;
-    if (!imagePattern.test(studentPhoto)) {
+    // 6. Validate image format and size (multer file check)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    
+    if (!allowedMimeTypes.includes(studentPhoto.mimetype)) {
         return { valid: false, error: "Foto pelajar harus berupa gambar (PNG, JPEG, WebP, GIF)." };
     }
-    if (!imagePattern.test(studentCardPhoto)) {
+    if (!allowedMimeTypes.includes(studentCardPhoto.mimetype)) {
         return { valid: false, error: "Foto kartu pelajar harus berupa gambar (PNG, JPEG, WebP, GIF)." };
     }
 
-    // Check size limit: max 5MB (roughly 6.7M characters)
-    const maxChars = 5 * 1024 * 1024 * (4 / 3);
-    if (studentPhoto.length > maxChars) {
+    // Check size limit: max 5MB
+    const maxSize = 5 * 1024 * 1024;
+    if (studentPhoto.size > maxSize) {
         return { valid: false, error: "Ukuran foto pelajar tidak boleh melebihi 5MB." };
     }
-    if (studentCardPhoto.length > maxChars) {
+    if (studentCardPhoto.size > maxSize) {
         return { valid: false, error: "Ukuran foto kartu pelajar tidak boleh melebihi 5MB." };
     }
 
@@ -102,10 +102,9 @@ function saveRegistration({ name, email, birthDate, studentPhoto, studentCardPho
         throw new Error('No writable uploads directory available for registration images.');
     }
 
-    // Save student photo image
-    const photoInfo = saveBase64Image(studentPhoto, 'photo', email, uploadsDir);
-    // Save student card image
-    const cardInfo = saveBase64Image(studentCardPhoto, 'card', email, uploadsDir);
+    // Move uploaded files from temp dest to final dir
+    const photoInfo = moveMulterFile(studentPhoto, 'photo', email, uploadsDir);
+    const cardInfo = moveMulterFile(studentCardPhoto, 'card', email, uploadsDir);
 
     return {
         studentPhotoUrl: `/uploads/${photoInfo.filename}`,
@@ -113,19 +112,29 @@ function saveRegistration({ name, email, birthDate, studentPhoto, studentCardPho
     };
 }
 
-function saveBase64Image(base64Str, prefix, email, destDir) {
-    const matches = base64Str.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-        throw new Error("Invalid base64 image data");
+function moveMulterFile(fileObj, prefix, email, destDir) {
+    if (!fileObj || !fileObj.path) {
+        throw new Error("Invalid file object");
     }
 
-    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-    const dataBuffer = Buffer.from(matches[2], 'base64');
     const safeEmail = String(email).replace(/[^a-zA-Z0-9]/g, '');
+    
+    let ext = 'jpg';
+    if (fileObj.mimetype === 'image/png') ext = 'png';
+    else if (fileObj.mimetype === 'image/webp') ext = 'webp';
+    else if (fileObj.mimetype === 'image/gif') ext = 'gif';
+
     const filename = `${prefix}_${Date.now()}_${safeEmail}.${ext}`;
     const destPath = path.join(destDir, filename);
 
-    fs.writeFileSync(destPath, dataBuffer);
+    // Copy file to final destination and remove temp
+    fs.copyFileSync(fileObj.path, destPath);
+    try {
+        fs.unlinkSync(fileObj.path);
+    } catch (e) {
+        console.error("Failed to delete temp file:", e);
+    }
+
     return { filename, path: destPath };
 }
 

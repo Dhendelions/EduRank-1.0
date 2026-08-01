@@ -2682,17 +2682,41 @@ function handleRegisterSubmit(event){
         return;
     }
 
+    const formData = new FormData();
+    formData.append("nama", name);
+    // Kita biarkan username kosong agar digenerate otomatis di backend seperti sebelumnya
+    formData.append("email", email);
+    formData.append("password", password);
+    formData.append("confirmPassword", confirm);
+    formData.append("birthDate", birthDate);
+
+    // Helper untuk mengubah base64 menjadi Blob jika file tidak terdeteksi tapi ada base64 di localStorage
+    function dataURLtoBlob(dataurl) {
+        const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {type:mime});
+    }
+
+    if (studentPhoto) {
+        formData.append("student_photo", studentPhoto);
+    } else if (studentPhotoBase64) {
+        formData.append("student_photo", dataURLtoBlob(studentPhotoBase64), "student_photo.jpg");
+    }
+
+    if (studentCardPhoto) {
+        formData.append("student_card_photo", studentCardPhoto);
+    } else if (studentCardPhotoBase64) {
+        formData.append("student_card_photo", dataURLtoBlob(studentCardPhotoBase64), "student_card_photo.jpg");
+    }
+
     fetch(getApiUrl('/api/register'), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            name,
-            email,
-            password,
-            birthDate,
-            studentPhoto: studentPhotoBase64,
-            studentCardPhoto: studentCardPhotoBase64
-        })
+        body: formData
     })
     .then(res => res.json())
     .then(data => {

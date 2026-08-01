@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
 const db = require('./db');
 const { getRandomQuestions, checkAnswer, getQuestionData } = require('./questionsData');
 const { calculateELO } = require('./elo');
@@ -125,15 +126,32 @@ app.post('/api/feedback', (req, res) => {
     res.status(201).json({ message: 'Feedback received' });
 });
 
+// Konfigurasi Multer
+const upload = multer({ dest: path.join(__dirname, '../uploads/') });
+
 // 1. Register
-app.post('/api/register', async (req, res) => {
-    const { name, email, password, birthDate, studentPhoto, studentCardPhoto } = req.body || {};
+app.post('/api/register', upload.fields([
+    { name: 'student_photo', maxCount: 1 },
+    { name: 'student_card_photo', maxCount: 1 }
+]), async (req, res) => {
+    // Debugging sementara
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
+
+    const { nama, username, email, password, confirmPassword, birthDate } = req.body || {};
+    
+    // Sesuaikan variable name agar kompatibel dengan existing checker
+    const name = nama; 
+    
+    // Ambil file dari req.files jika tersedia
+    const studentPhoto = req.files && req.files['student_photo'] ? req.files['student_photo'][0] : null;
+    const studentCardPhoto = req.files && req.files['student_card_photo'] ? req.files['student_card_photo'][0] : null;
     
     const registrationChecker = require('./registrationChecker');
     
     // Validate registration input
     const validation = registrationChecker.validateRegistration({
-        name, email, password, birthDate, studentPhoto, studentCardPhoto
+        name, email, password, confirmPassword, birthDate, studentPhoto, studentCardPhoto
     });
     
     if (!validation.valid) {
@@ -145,7 +163,7 @@ app.post('/api/register', async (req, res) => {
     const trimmedPassword = String(password || '');
 
     try {
-        // Save base64 images to file system and CSV log
+        // Pindahkan file ke directory akhir (uploads)
         const saveInfo = registrationChecker.saveRegistration({
             name: trimmedName,
             email: trimmedEmail,
@@ -158,7 +176,7 @@ app.post('/api/register', async (req, res) => {
         const safeBirthDate = birthDate ? String(birthDate).slice(0, 10) : null;
         
         db.run(`INSERT INTO users (username, email, password, nama, tanggal_lahir, foto, role, bio, avatar, student_photo, student_card_photo, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [trimmedEmail.split('@')[0].slice(0, 50), trimmedEmail, hashedPassword, trimmedName, safeBirthDate, saveInfo.studentPhotoUrl, 'siswa', null, null, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl, 'Offline'], function(err) {
+            [String(username || trimmedEmail.split('@')[0]).slice(0, 50), trimmedEmail, hashedPassword, trimmedName, safeBirthDate, saveInfo.studentPhotoUrl, 'siswa', null, null, saveInfo.studentPhotoUrl, saveInfo.studentCardPhotoUrl, 'Offline'], function(err) {
                 if (err) {
                     console.error("Register DB error code:", err.code, "message:", err.message);
                     if (err.code === 'ER_DUP_ENTRY' || String(err.message).includes('UNIQUE') || String(err.message).includes('duplicate')) {
@@ -175,7 +193,7 @@ app.post('/api/register', async (req, res) => {
                         id: this.lastID,
                         name: trimmedName,
                         email: trimmedEmail,
-                        username: trimmedEmail.split('@')[0].slice(0, 50)
+                        username: String(username || trimmedEmail.split('@')[0]).slice(0, 50)
                     }
                 });
             });
