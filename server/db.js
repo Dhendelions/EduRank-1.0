@@ -40,23 +40,24 @@ const pool = mysql.createPool({
     queueLimit: 100
 });
 
-// Test connection on startup
-pool.getConnection((err, connection) => {
-    if (err) {
-        console.error('\n================================================================');
-        console.error('[MYSQL-ERROR] Gagal terhubung ke database MySQL!');
-        console.error(`Pesan Error: ${err.message}`);
-        console.error(`[MYSQL-ERROR] Config snapshot host=${host || 'MISSING'} user=${user ? 'SET' : 'MISSING'} db=${database || 'MISSING'} port=${port}`);
-        console.error('Silakan pastikan:');
-        console.error('1. Server MySQL Anda sudah berjalan (running)');
-        console.error('2. Database sudah dibuat');
-        console.error('3. Kredensial Environment Variables (MYSQLHOST, MYSQLUSER, dll) sudah sesuai');
-        console.error('================================================================\n');
-        return;
-    }
-    console.log('[MYSQL] Koneksi ke MySQL berhasil dibangun.');
-    connection.release();
-});
+// Test connection on startup and retry if failed
+function connectAndInit() {
+    pool.getConnection((err, connection) => {
+        if (err) {
+            console.error('\n================================================================');
+            console.error('[MYSQL-ERROR] Gagal terhubung ke database MySQL! Menunggu 5 detik untuk mencoba lagi...');
+            console.error(`Pesan Error: ${err.message}`);
+            console.error('================================================================\n');
+            setTimeout(connectAndInit, 5000); // Coba lagi dalam 5 detik
+            return;
+        }
+        console.log('[MYSQL] Koneksi ke MySQL berhasil dibangun.');
+        connection.release();
+        
+        // Auto-initialize tables setelah koneksi berhasil
+        initDb();
+    });
+}
 
 // Auto-initialize tables
 function initDb() {
@@ -210,8 +211,8 @@ function initDb() {
     });
 }
 
-// Start table verification
-initDb();
+// Start table verification only after connection is ready
+connectAndInit();
 
 // SQLite API compatibility wrapper
 function run(query, params, callback) {
