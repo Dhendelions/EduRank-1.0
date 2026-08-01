@@ -1,9 +1,11 @@
 const mysql = require('mysql2');
 const path = require('path');
 
-// Load environment variables from the server folder first, then fall back to the project root.
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+// Hanya load .env jika BUKAN di Railway
+if (!process.env.RAILWAY_ENVIRONMENT) {
+    require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+    require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+}
 
 function parsePort(value, fallback) {
     const parsed = Number.parseInt(String(value), 10);
@@ -27,11 +29,30 @@ function parseMysqlUrl(rawUrl) {
 }
 
 const directConfig = {
-    host: process.env.DB_HOST || process.env.MYSQLHOST || process.env.RAILWAY_MYSQL_HOST,
-    user: process.env.DB_USER || process.env.MYSQLUSER || process.env.RAILWAY_MYSQL_USER,
-    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || process.env.RAILWAY_MYSQL_PASSWORD,
-    database: process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.RAILWAY_MYSQL_DATABASE,
-    port: process.env.DB_PORT || process.env.MYSQLPORT || process.env.RAILWAY_MYSQL_PORT
+    host:
+        process.env.MYSQLHOST ||
+        process.env.RAILWAY_MYSQL_HOST ||
+        process.env.DB_HOST,
+
+    user:
+        process.env.MYSQLUSER ||
+        process.env.RAILWAY_MYSQL_USER ||
+        process.env.DB_USER,
+
+    password:
+        process.env.MYSQLPASSWORD ||
+        process.env.RAILWAY_MYSQL_PASSWORD ||
+        process.env.DB_PASSWORD,
+
+    database:
+        process.env.MYSQLDATABASE ||
+        process.env.RAILWAY_MYSQL_DATABASE ||
+        process.env.DB_NAME,
+
+    port:
+        process.env.MYSQLPORT ||
+        process.env.RAILWAY_MYSQL_PORT ||
+        process.env.DB_PORT
 };
 
 const urlConfig = parseMysqlUrl(process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQLURL);
